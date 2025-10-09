@@ -1,0 +1,238 @@
+:root {
+  --navy-900: #0b1d2e;
+  --navy-800: #0f2a44;
+  --navy-700: #123553;
+  --bg: #f6f8fb;
+  --panel: #ffffff;
+  --text-strong: #0b1d2e;
+  --text: #243447;
+  --muted: #6b7a90;
+  --line: #e6ecf2;
+  --accent: #0ea5ff;
+  --accent-hover: #098fe0;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: "Noto Sans KR", sans-serif;
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+}
+
+.header--dark {
+  background: var(--navy-900);
+  color: #fff;
+}
+.header__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header__logo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.header__nav .nav__list {
+  display: flex;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.header__nav a {
+  color: #cfe9ff;
+  text-decoration: none;
+  font-weight: 500;
+}
+.header__nav a.active {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.hero {
+  background: linear-gradient(180deg, var(--navy-900), var(--navy-800));
+  color: #fff;
+  padding: 28px 0 40px;
+}
+.hero__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.hero__tabs {
+  display: flex;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+.tab {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cfe9ff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.tab--active {
+  background: #fff;
+  color: var(--navy-900);
+}
+.hero__title {
+  margin: 10px 0 18px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.searchbar {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  align-items: end;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+}
+.searchbar__item label {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 6px;
+}
+.searchbar__item input {
+  width: 100%;
+  padding: 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+}
+.btn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 13px 18px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn--primary:hover {
+  background: var(--accent-hover);
+}
+
+@media (max-width: 900px) {
+  .searchbar {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 10px;
+  }
+}
+
+.content {
+  max-width: 1280px;
+  margin: 28px auto;
+  padding: 0 20px;
+}
+.content__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 6px 16px rgba(16, 24, 40, 0.04);
+}
+.panel__title {
+  margin: 0 0 12px;
+  color: var(--text-strong);
+  font-size: 18px;
+  font-weight: 700;
+}
+.panel--map {
+  padding: 0;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.route-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fafcff;
+}
+.route-card h4 {
+  margin: 0 0 6px;
+  color: var(--navy-800);
+}
+.route-card p {
+  margin: 4px 0;
+  color: var(--text);
+}
+.route-card .cost {
+  font-weight: 700;
+  color: var(--navy-800);
+}
+
+.map {
+  width: 100%;
+  height: 480px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.loading__spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  margin: 14px 0;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #e2ecf6;
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.footer {
+  max-width: 1280px;
+  margin: 30px auto 60px;
+  padding: 0 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .content__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .map {
+    height: 360px;
+  }
+}
