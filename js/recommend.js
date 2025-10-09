@@ -9,24 +9,51 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("travelForm");
   const resultContainer = document.getElementById("recommendResult");
   const loadingIndicator = document.getElementById("loadingIndicator");
+  const startInput = document.getElementById("travelStart");
+  const endInput = document.getElementById("travelEnd");
+  const budgetInput = document.getElementById("travelBudget");
 
   initMap([35.6762, 139.6503], 5);
+
+  budgetInput.addEventListener("input", (e) => {
+    const posFromEnd = e.target.value.length - e.target.selectionStart;
+    const onlyNum = e.target.value.replace(/[^\d]/g, "");
+    e.target.value = onlyNum ? Number(onlyNum).toLocaleString("ko-KR") : "";
+    const newPos = e.target.value.length - posFromEnd;
+    e.target.setSelectionRange(newPos, newPos);
+  });
+
+  startInput.addEventListener("change", () => {
+    endInput.min = startInput.value || "";
+    if (endInput.value && endInput.value < endInput.min)
+      endInput.value = endInput.min;
+  });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const period = document.getElementById("travelPeriod").value.trim();
     const people = document.getElementById("travelPeople").value.trim();
-    const budget = document.getElementById("travelBudget").value.trim();
+    const start = startInput.value;
+    const end = endInput.value;
+    const budgetFormatted = budgetInput.value;
 
-    if (!period || !people || !budget) {
+    if (!start || !end || !people || !budgetFormatted) {
       alert("기간 / 인원 / 경비를 모두 입력해주세요.");
       return;
     }
 
+    const period = `${toYmdDot(start)} ~ ${toYmdDot(end)}`;
+    const budget = budgetFormatted.replace(/[^\d]/g, "");
+
     showLoading(loadingIndicator);
     try {
-      const data = await getAiRecommendation({ period, people, budget });
+      const data = await getAiRecommendation({
+        period,
+        startDate: start,
+        endDate: end,
+        people,
+        budget,
+      });
       renderRecommendation(data, resultContainer);
       renderMapWithRoutes(data.routes);
     } catch (err) {
@@ -37,6 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+function toYmdDot(value) {
+  const d = new Date(value);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}.${mm}.${dd}`;
+}
 
 function renderRecommendation(data, container) {
   if (!data || !Array.isArray(data.routes)) {
@@ -61,12 +96,10 @@ function initMap(centerLatLng, zoom = 6) {
     centerLatLng,
     zoom
   );
-
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors",
     maxZoom: 19,
   }).addTo(leafletMap);
-
   routeLayerGroup = L.layerGroup().addTo(leafletMap);
 }
 

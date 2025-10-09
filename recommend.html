@@ -49,14 +49,11 @@
 
         <form id="travelForm" class="searchbar">
           <div class="searchbar__item">
-            <label for="travelPeriod">기간</label>
-            <input
-              type="text"
-              id="travelPeriod"
-              name="period"
-              placeholder="예: 2025.12.20 ~ 2025.12.25"
-              required
-            />
+            <label for="travelStart">여행 기간</label>
+            <div style="display: flex; gap: 8px">
+              <input type="date" id="travelStart" name="start" required />
+              <input type="date" id="travelEnd" name="end" required />
+            </div>
           </div>
 
           <div class="searchbar__item">
@@ -74,11 +71,10 @@
           <div class="searchbar__item">
             <label for="travelBudget">경비 (₩)</label>
             <input
-              type="number"
+              type="text"
               id="travelBudget"
               name="budget"
-              min="10000"
-              step="1000"
+              inputmode="numeric"
               placeholder="1,000,000"
               required
             />
