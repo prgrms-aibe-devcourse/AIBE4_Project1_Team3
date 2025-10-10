@@ -1,50 +1,17 @@
-// js/api/ai.js
-const USE_MOCK = true; // 실제 LLM 연결 시 false로
+const USE_MOCK = false; 
 const API_BASE = "http://localhost:3000";
 
 export async function getAiRecommendation({ city, startDate, endDate, people, budget }) {
   const days = calcDays(startDate, endDate);
 
-  const prompt = `
-너는 여행 플래너다.
-도시: ${city}
-일정: ${days}일
-인원: ${people}명
-예산: ${budget}원
-
-요구사항:
-- 반드시 "${city}" 도시 내부에서만 장소를 추천한다.
-- 하루에 소화 가능한 3~5개의 장소를 추천한다(이동 시간 고려).
-- 각 장소에는 위도와 경도 좌표를 포함한다.
-- 결과는 오직 JSON만 반환한다. 불필요한 설명은 금지.
-
-출력 스키마(JSON만):
-{
-  "city": "${city}",
-  "dayPlans": [
-    {
-      "day": 1,
-      "title": "첫째 날 테마",
-      "stops": [
-        { "placeName": "장소명", "summary": "짧은 설명", "lat": 0.0, "lng": 0.0, "estimatedCost": 0, "popularity": 0.0 }
-      ]
-    }
-  ]
-}
-  `.trim();
-
   if (!USE_MOCK) {
-    const res = await fetch("YOUR_AI_ENDPOINT", {
+    const res = await fetch(`${API_BASE}/ai/itinerary`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer YOUR_API_KEY"
-      },
-      body: JSON.stringify({ prompt, maxTokens: 1200 })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ city, startDate, endDate, people, budget })
     });
-    const text = await res.text();
-    const json = safeParseJSON(text);
-    return coerceItinerary(json, { city, days });
+    if (!res.ok) throw new Error("AI itinerary request failed");
+    return await res.json(); // { city, dayPlans: [...] }
   } else {
     return mockItinerary(city, days, budget);
   }
