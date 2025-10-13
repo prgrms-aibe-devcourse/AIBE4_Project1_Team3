@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>여행 경로 리뷰 작성하기</title>
+    <link rel="stylesheet" href="/css/review/review-form.css" />
+  </head>
+  <body>
+    <main>
+      <h2>여행 경로 리뷰 작성</h2>
+      <hr />
+
+      <div class="route-container">
+        <div class="route-info">
+          <h3>도쿄 4일 여행 루트</h3>
+          <p>
+            Day 1 – 시내 대표 명소 아사쿠사 센소지 & 나카미세 거리 스카이트리
+            전망대 우에노 공원 & 동물원 Day 2 – 쇼핑 & 시부야·신주쿠 하라주쿠
+            다케시타 거리 시부야 스크램블 교차로 & 센터가이 신주쿠 도쿄도청
+            전망대, 가부키초 산책 Day 3 – 근교 여행 디즈니랜드, 오다이바,
+            요코하마 투어 등 Day 4 – 자유 일정 신주쿠 쇼핑, 도쿄역 기념품 구매,
+            귀국 준비 기타 일정 추가 예시 내용이 길어질 경우 스크롤이
+            나타납니다.
+          </p>
+        </div>
+        <div class="route-map"></div>
+      </div>
+
+      <form id="reviewForm">
+        <div>
+          <label>제목</label>
+          <input type="text" name="title" maxlength="100" required />
+        </div>
+
+        <div>
+          <label>비밀번호</label>
+          <input type="password" name="password" maxlength="100" required />
+        </div>
+
+        <div>
+          <label>별점</label>
+          <div class="star-rating space-x-4 mx-auto">
+            <input
+              type="radio"
+              id="5-stars"
+              name="rating"
+              value="5"
+              v-model="ratings"
+            />
+            <label for="5-stars" class="star pr-4">★</label>
+            <input
+              type="radio"
+              id="4-stars"
+              name="rating"
+              value="4"
+              v-model="ratings"
+            />
+            <label for="4-stars" class="star">★</label>
+            <input
+              type="radio"
+              id="3-stars"
+              name="rating"
+              value="3"
+              v-model="ratings"
+            />
+            <label for="3-stars" class="star">★</label>
+            <input
+              type="radio"
+              id="2-stars"
+              name="rating"
+              value="2"
+              v-model="ratings"
+            />
+            <label for="2-stars" class="star">★</label>
+            <input
+              type="radio"
+              id="1-star"
+              name="rating"
+              value="1"
+              v-model="ratings"
+              required
+            />
+            <label for="1-star" class="star">★</label>
+          </div>
+        </div>
+
+        <div>
+          <label>내용</label>
+          <textarea name="content" required></textarea>
+        </div>
+
+        <button type="submit">등록하기</button>
+      </form>
+    </main>
+  </body>
+</html>
