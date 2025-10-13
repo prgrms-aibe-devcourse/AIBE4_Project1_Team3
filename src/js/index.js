@@ -56,7 +56,9 @@ function displayResults(recommendations) {
     document.getElementById(`country-${rank}`).innerText = rec.country;
     document.getElementById(`current-rate-${rank}`).innerText =
       rec.current_rate;
-    document.getElementById(`future_rate-${rank}`).innerText = rec.future_rate;
+    document.getElementById(`forcasted_exchange_rate-${rank}`).innerText =
+      rec.future_rate;
+    document.getElementById(`reason-${rank}`).innerText = rec.reason;
   });
 }
 
