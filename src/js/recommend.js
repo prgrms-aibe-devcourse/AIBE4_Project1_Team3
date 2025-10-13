@@ -142,6 +142,7 @@ class RecommendationRenderer {
   constructor(container) {
     this.container = container;
   }
+
   static tagsFrom(text = "") {
     const t = String(text).toLowerCase();
     const tags = [];
@@ -153,16 +154,19 @@ class RecommendationRenderer {
     if (/패스|주유패스/.test(t)) tags.push("패스 혜택");
     return tags.slice(0, 3);
   }
+
   static sumKRWFromBreakdown(cb) {
     if (!Array.isArray(cb)) return 0;
     return cb.reduce((acc, it) => acc + (Number(it.subtotalKRW) || 0), 0);
   }
+
   render(itinerary) {
     const days = itinerary?.dayPlans || [];
     if (!days.length) {
       this.container.innerHTML = "<p>추천 결과가 없습니다.</p>";
       return;
     }
+
     const daySums = days.map(
       (dp) =>
         Number(dp.dayTotalKRW) ||
@@ -173,6 +177,7 @@ class RecommendationRenderer {
           return a + (fromCB || Number(s.estimatedCost) || 0);
         }, 0)
     );
+
     const avgDaily = daySums.length
       ? Math.round(daySums.reduce((a, b) => a + b, 0) / daySums.length)
       : 0;
@@ -188,6 +193,7 @@ class RecommendationRenderer {
             .map((s) => s.stopReason || "")
             .join(" ")}`
         );
+
         const rows = (dp.stops || [])
           .map((s, i) => {
             const stopSum =
@@ -197,86 +203,100 @@ class RecommendationRenderer {
             const cbHTML =
               Array.isArray(s.costBreakdown) && s.costBreakdown.length
                 ? `
-            <details class="cost-detail">
-              <summary>비용 근거 보기</summary>
-              <ul style="margin:.4rem 0 0 .8rem; padding:0; list-style: disc;">
-                ${s.costBreakdown
-                  .map((item) => {
-                    const unit = Number(item.unitJPY) || 0;
-                    const qty = Number(item.qty) || 1;
-                    const subJPY = Number(item.subtotalJPY) || unit * qty;
-                    const subKRW = Number(item.subtotalKRW) || 0;
-                    const basis = item.basis ? ` – ${item.basis}` : "";
-                    const conf = isFinite(item.confidence)
-                      ? ` (신뢰도 ${item.confidence})`
-                      : "";
-                    return `
-                    <li>
-                      <strong>${
-                        item.category || "기타"
-                      }</strong>${basis}${conf}<br/>
-                      단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
-                      원화: ${formatCurrency(subKRW)}
-                    </li>
-                  `;
-                  })
-                  .join("")}
-              </ul>
-            </details>
-          `
+              <details class="cost-detail">
+                <summary>비용 근거 보기</summary>
+                <ul style="margin:.4rem 0 0 .8rem; padding:0; list-style: disc;">
+                  ${s.costBreakdown
+                    .map((item) => {
+                      const unit = Number(item.unitJPY) || 0;
+                      const qty = Number(item.qty) || 1;
+                      const subJPY = Number(item.subtotalJPY) || unit * qty;
+                      const subKRW = Number(item.subtotalKRW) || 0;
+                      const basis = item.basis ? ` – ${item.basis}` : "";
+                      const conf = isFinite(item.confidence)
+                        ? ` (신뢰도 ${item.confidence})`
+                        : "";
+                      return `
+                        <li>
+                          <strong>${
+                            item.category || "기타"
+                          }</strong>${basis}${conf}<br/>
+                          단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
+                          원화: ${formatCurrency(subKRW)}
+                        </li>`;
+                    })
+                    .join("")}
+                </ul>
+              </details>`
                 : s.costReason
                 ? `
-            <details class="cost-detail">
-              <summary>비용 근거 보기</summary>
-              <p>${s.costReason}</p>
-            </details>
-          `
+              <details class="cost-detail">
+                <summary>비용 근거 보기</summary>
+                <p>${s.costReason}</p>
+              </details>`
                 : "";
+
             return `
-          <li class="stops-row">
-            <span class="idx">${i + 1}</span>
-            <div class="place">
-              <div class="name">${s.placeName}</div>
-              <div class="sub">${s.summary || ""}</div>
-              ${
-                s.stopReason ? `<p class="stop-reason">${s.stopReason}</p>` : ""
-              }
-              ${cbHTML}
-            </div>
-            <span class="cost">${formatCurrency(stopSum)}</span>
-          </li>
-        `;
+              <li class="stops-row">
+                <span class="idx">${i + 1}</span>
+                <div class="place">
+                  <div class="name">${s.placeName}</div>
+                  <div class="sub">${s.summary || ""}</div>
+                  ${
+                    s.stopReason
+                      ? `<p class="stop-reason">${s.stopReason}</p>`
+                      : ""
+                  }
+                  ${cbHTML}
+                </div>
+                <span class="cost">${formatCurrency(stopSum)}</span>
+              </li>`;
           })
           .join("");
 
         return `
-        <article class="route-card">
-          <header class="route-card__head">
-            <h4>Day ${dp.day} — ${dp.title || ""}</h4>
-            ${
-              tags.length
-                ? `<div class="tags">${tags
-                    .map((t) => `<span class="badge">${t}</span>`)
-                    .join("")}</div>`
-                : ""
-            }
-            <p class="route-card__reason">${
-              dp.dayReason ||
-              "인기와 접근성을 고려해 효율적인 동선으로 구성했습니다."
-            }</p>
-            <div class="budgetbar">
-              <div class="bar"><span style="width:${pct}%"></span></div>
-              <div class="bar-meta">
-                <span>일자 합계</span>
-                <strong>${formatCurrency(daySum)}</strong>
+          <article class="route-card">
+            <header class="route-card__head">
+              <h4>Day ${dp.day} — ${dp.title || ""}</h4>
+            </header>
+        
+            <div class="route-card__body" style="display: none;">
+              <p class="route-card__reason">
+                ${
+                  dp.dayReason ||
+                  "인기와 접근성을 고려해 효율적인 동선으로 구성했습니다."
+                }
+              </p>
+        
+              <div class="budgetbar">
+                <div class="bar"><span style="width:${pct}%"></span></div>
+                <div class="bar-meta">
+                  <span>일자 합계</span>
+                  <strong>${formatCurrency(daySum)}</strong>
+                </div>
               </div>
+        
+              <ol class="stops-table">${rows}</ol>
             </div>
-          </header>
-          <ol class="stops-table">${rows}</ol>
-        </article>
-      `;
+          </article>
+        `;
       })
       .join("");
+
+    // 카드는 하나만
+    const cards = this.container.querySelectorAll(".route-card");
+    cards.forEach((card) => {
+      const head = card.querySelector(".route-card__head");
+      const body = card.querySelector(".route-card__body");
+
+      head.addEventListener("click", () => {
+        this.container.querySelectorAll(".route-card__body").forEach((b) => {
+          if (b !== body) b.style.display = "none";
+        });
+
+        body.style.display = body.style.display === "none" ? "block" : "none";
+      });
+    });
   }
 }
 

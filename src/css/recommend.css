@@ -246,7 +246,6 @@ body {
   }
 }
 
-/* Text blocks for reasons (legacy support if used elsewhere) */
 .stop-reason,
 .cost-reason,
 .day-reason {
@@ -264,8 +263,6 @@ body {
   border-left: 4px solid var(--accent);
   border-radius: 4px;
 }
-
-/* ===== New UI blocks ===== */
 
 /* Card Head */
 .route-card__head {
@@ -367,8 +364,7 @@ body {
   color: var(--accent);
   white-space: nowrap;
   padding-top: 0.1rem;
-} /* 표에서는 포인트 컬러 */
-
+} 
 /* Cost reason toggle */
 .cost-detail {
   margin-top: 0.35rem;
@@ -396,4 +392,28 @@ body {
   .cost {
     justify-self: end;
   }
+}
+
+.route-card {
+  border: 1px solid #e6ecf2;
+  border-radius: 10px;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+.route-card__head {
+  cursor: pointer;
+  padding: 0.8rem 1rem;
+  background: #f7f9fc;
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+.route-card__head:hover {
+  background: #eef6ff;
+}
+.route-card__body {
+  padding: 0.8rem 1rem 1rem;
+}
+.route-card.active .route-card__head {
+  background: #e6f3ff;
+  border-left: 4px solid #0ea5ff;
 }
