@@ -40,7 +40,6 @@ const parseJSON = (text) => {
   }
 };
 
-// 비용 정규화 설정
 const COST_CONFIG = {
   MIN_DAY_BUDGET: 60000,
   MIN_PER_STOP: 3000,
@@ -61,7 +60,6 @@ const COST_CONFIG = {
   }
 };
 
-// 장소명 기반 최소 비용 조정
 function adjustCostByPlace(baseCost, placeName) {
   const name = String(placeName || "").toLowerCase();
   let adjusted = baseCost;
@@ -75,21 +73,18 @@ function adjustCostByPlace(baseCost, placeName) {
   return adjusted;
 }
 
-// 비용 범위 내로 클램핑
 function clampCost(cost) {
   return Math.round(
     Math.min(COST_CONFIG.MAX_PER_STOP, Math.max(COST_CONFIG.MIN_PER_STOP, cost)) / 100
   ) * 100;
 }
 
-// 하루 일정의 비용 정규화
 function normalizeDayCosts(dayPlan, dayBudget) {
   const stops = Array.isArray(dayPlan.stops) ? dayPlan.stops : [];
   const numStops = Math.min(5, Math.max(1, stops.length));
   const weights = COST_CONFIG.WEIGHT_SETS[numStops] || [];
   const sumWeights = weights.reduce((a, b) => a + b, 0) || 1;
 
-  // 1단계: 가중치 기반 초기 비용 배분
   const initialCosts = stops.map((stop, i) => {
     const weight = weights[i] || 1 / stops.length;
     let baseCost = Math.round((weight / sumWeights) * dayBudget);
@@ -97,7 +92,6 @@ function normalizeDayCosts(dayPlan, dayBudget) {
     return { ...stop, estimatedCost: clampCost(baseCost) };
   });
 
-  // 2단계: 예산에 맞게 스케일 조정
   const currentSum = initialCosts.reduce((sum, s) => sum + s.estimatedCost, 0);
   const scale = currentSum > 0 ? dayBudget / currentSum : 1;
 
@@ -205,17 +199,51 @@ app.post("/ai/itinerary", async (req, res) => {
         model: "gemini-2.0-flash-001",
         contents: prompt,
       });
-    } catch {
-      response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
+    } catch (firstError) {
+      console.log("gemini-2.0-flash-001 실패, fallback 시도:", firstError.message);
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+        });
+      } catch (secondError) {
+        console.error("모든 Gemini 모델 실패:", secondError);
+        return res.status(502).json({
+          error: "AI 서비스 연결 실패",
+          details: secondError.message
+        });
+      }
     }
 
-    const text = response.text;
+    // Gemini API 응답 구조 파싱
+    let text;
+    try {
+      // @google/genai의 GenerateContentResponse 구조 확인
+      if (typeof response?.text === 'function') {
+        text = response.text();
+      } else if (response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        // 실제 응답 구조
+        text = response.candidates[0].content.parts[0].text;
+      } else {
+        console.error("예상치 못한 응답 구조:", JSON.stringify(response, null, 2));
+        return res.status(502).json({ error: "AI 응답 구조가 예상과 다릅니다." });
+      }
+    } catch (textError) {
+      console.error("text() 호출 오류:", textError);
+      return res.status(502).json({ error: "AI 응답 파싱 실패", details: textError.message });
+    }
+
+    if (!text) {
+      return res.status(502).json({ error: "AI 응답이 비어 있습니다." });
+    }
+
+    console.log("AI 응답 텍스트 (처음 200자):", text.substring(0, 200));
+
     const json = parseJSON(text);
-    if (!json || !Array.isArray(json.dayPlans))
+    if (!json || !Array.isArray(json.dayPlans)) {
+      console.error("JSON 파싱 실패. 원본 텍스트:", text);
       return res.status(400).json({ error: "AI 응답 파싱 실패", raw: text });
+    }
 
     const budgetNum = Number(String(budget).replace(/[^\d]/g, "")) || 0;
     const withReasons = ensureReasons(json);

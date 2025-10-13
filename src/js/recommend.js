@@ -2,6 +2,13 @@ import { getAiRecommendation } from "./api/ai.js";
 import { showLoading, hideLoading } from "./components/loading.js";
 import { formatCurrency, stripDigits, formatDate } from "./utils/format.js";
 
+// XSS 방어를 위한 HTML 이스케이프 함수
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 class NumberUtils {
   static formatInputCurrency(input) {
     const posFromEnd = input.value.length - input.selectionStart;
@@ -100,9 +107,9 @@ class MapRenderer {
         allPts.push(latlng);
         L.marker(latlng)
           .bindPopup(
-            `<b>Day ${dp.day} · ${si + 1}. ${s.placeName}</b><br/>${
+            `<b>Day ${dp.day} · ${si + 1}. ${escapeHtml(s.placeName)}</b><br/>${escapeHtml(
               s.summary || ""
-            }`
+            )}`
           )
           .addTo(this.layer);
       });
@@ -136,12 +143,12 @@ class RecommendationRenderer {
         const qty = Number(item.qty) || 1;
         const subJPY = Number(item.subtotalJPY) || unit * qty;
         const subKRW = Number(item.subtotalKRW) || 0;
-        const basis = item.basis ? ` – ${item.basis}` : "";
+        const basis = item.basis ? ` – ${escapeHtml(item.basis)}` : "";
         const conf = isFinite(item.confidence) ? ` (신뢰도 ${item.confidence})` : "";
 
         return `
           <li>
-            <strong>${item.category || "기타"}</strong>${basis}${conf}<br/>
+            <strong>${escapeHtml(item.category || "기타")}</strong>${basis}${conf}<br/>
             단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
             원화: ${formatCurrency(subKRW)}
           </li>`;
@@ -160,7 +167,7 @@ class RecommendationRenderer {
       return `
         <details class="cost-detail">
           <summary>비용 근거 보기</summary>
-          <p>${stop.costReason}</p>
+          <p>${escapeHtml(stop.costReason)}</p>
         </details>`;
     }
 
@@ -175,9 +182,9 @@ class RecommendationRenderer {
       <li class="stops-row">
         <span class="idx">${index + 1}</span>
         <div class="place">
-          <div class="name">${stop.placeName}</div>
-          <div class="sub">${stop.summary || ""}</div>
-          ${stop.stopReason ? `<p class="stop-reason">${stop.stopReason}</p>` : ""}
+          <div class="name">${escapeHtml(stop.placeName)}</div>
+          <div class="sub">${escapeHtml(stop.summary || "")}</div>
+          ${stop.stopReason ? `<p class="stop-reason">${escapeHtml(stop.stopReason)}</p>` : ""}
           ${cbHTML}
         </div>
         <span class="cost">${formatCurrency(stopSum)}</span>
@@ -191,12 +198,12 @@ class RecommendationRenderer {
     return `
       <article class="route-card">
         <header class="route-card__head">
-          <h4>Day ${dayPlan.day} — ${dayPlan.title || ""}</h4>
+          <h4>Day ${dayPlan.day} — ${escapeHtml(dayPlan.title || "")}</h4>
         </header>
 
         <div class="route-card__body" style="display: none;">
           <p class="route-card__reason">
-            ${dayPlan.dayReason || "인기와 접근성을 고려해 효율적인 동선으로 구성했습니다."}
+            ${escapeHtml(dayPlan.dayReason || "인기와 접근성을 고려해 효율적인 동선으로 구성했습니다.")}
           </p>
 
           <div class="budgetbar">
@@ -290,27 +297,56 @@ class AppController {
     const people = (this.people?.value || "").trim();
     const budgetNum = Number(stripDigits(this.budget?.value || ""));
     const city = (this.city?.value || "오사카").trim();
+    const peopleNum = parseInt(people, 10);
+
     if (!start || !end || !people || !budgetNum) {
       alert("기간 / 인원 / 경비를 모두 입력해주세요.");
       return;
     }
+    if (budgetNum <= 0) {
+      alert("경비는 0보다 커야 합니다.");
+      return;
+    }
+    if (isNaN(peopleNum) || peopleNum <= 0) {
+      alert("인원은 양의 정수여야 합니다.");
+      return;
+    }
+    if (new Date(end) < new Date(start)) {
+      alert("종료일은 시작일보다 빠를 수 없습니다.");
+      return;
+    }
+
     showLoading(this.loading);
     try {
       const itinerary = await getAiRecommendation({
         city,
-        period: `${formatDate(start)} ~ ${formatDate(end)}`,
         startDate: start,
         endDate: end,
         people,
         budget: budgetNum,
       });
+
+      if (!itinerary || !itinerary.dayPlans) {
+        throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
+      }
+
       const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
       const finalItin = { city: itinerary.city || city, dayPlans: optimized };
       this.cards.render(finalItin);
       this.map.renderDayPlans(finalItin.dayPlans);
     } catch (err) {
-      console.error(err);
-      this.result.innerHTML = "<p>추천 데이터를 불러오지 못했습니다.</p>";
+      console.error("AI 추천 오류:", err);
+
+      let errorMessage = "추천 데이터를 불러오지 못했습니다.";
+      if (err.message.includes("Failed to fetch")) {
+        errorMessage = "서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.";
+      } else if (err.message.includes("AI 추천 요청 실패")) {
+        errorMessage = `서버 오류가 발생했습니다: ${err.message}`;
+      } else if (err.message) {
+        errorMessage += `<br/><small>${escapeHtml(err.message)}</small>`;
+      }
+
+      this.result.innerHTML = `<p style="color: #ef4444;">${errorMessage}</p>`;
     } finally {
       hideLoading(this.loading);
     }
