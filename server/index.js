@@ -24,79 +24,109 @@ console.log(
   process.env.GEMINI_API_KEY ? "Loaded" : "Not found"
 );
 
-const pickJSON = (text) => {
+// JSON 파싱 유틸리티
+const parseJSON = (text) => {
   try {
     return JSON.parse(text);
   } catch {}
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) return null;
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+
   try {
-    return JSON.parse(m[0]);
+    return JSON.parse(jsonMatch[0]);
   } catch {
     return null;
   }
 };
 
-function normalizeCosts(itinerary, totalBudget, days) {
-  const dayBudget = Math.max(
-    60000,
-    Math.floor(totalBudget / Math.max(1, days))
-  );
-  const weightSets = {
+// 비용 정규화 설정
+const COST_CONFIG = {
+  MIN_DAY_BUDGET: 60000,
+  MIN_PER_STOP: 3000,
+  MAX_PER_STOP: 180000,
+  WEIGHT_SETS: {
     1: [1],
     2: [0.55, 0.45],
     3: [0.4, 0.35, 0.25],
     4: [0.35, 0.3, 0.2, 0.15],
     5: [0.3, 0.25, 0.2, 0.15, 0.1],
-  };
-  const minPerStop = 3000;
-  const maxPerStop = 180000;
+  },
+  SPECIAL_PLACES: {
+    "유니버설": 120000,
+    "성": 8000,
+    "타워": 8000,
+    "시장": 7000,
+    "거리": 7000,
+  }
+};
 
-  itinerary.dayPlans = (itinerary.dayPlans || []).map((d) => {
-    const stops = Array.isArray(d.stops) ? d.stops : [];
-    const weights = weightSets[Math.min(5, Math.max(1, stops.length))] || [];
-    const sumW = weights.reduce((a, b) => a + b, 0) || 1;
+// 장소명 기반 최소 비용 조정
+function adjustCostByPlace(baseCost, placeName) {
+  const name = String(placeName || "").toLowerCase();
+  let adjusted = baseCost;
 
-    const tuned = stops.map((s, i) => {
-      let base = Math.round(
-        ((weights[i] || 1 / stops.length) / sumW) * dayBudget
-      );
-      let name = String(s.placeName || "").toLowerCase();
-      if (name.includes("유니버설")) base = Math.max(base, 120000);
-      if (name.includes("성") || name.includes("타워"))
-        base = Math.max(base, 8000);
-      if (name.includes("시장") || name.includes("거리"))
-        base = Math.max(base, 7000);
-      const clamped = Math.min(maxPerStop, Math.max(minPerStop, base));
-      return { ...s, estimatedCost: Math.round(clamped / 100) * 100 };
-    });
+  for (const [keyword, minCost] of Object.entries(COST_CONFIG.SPECIAL_PLACES)) {
+    if (name.includes(keyword.toLowerCase())) {
+      adjusted = Math.max(adjusted, minCost);
+    }
+  }
 
-    const currentSum = tuned.reduce(
-      (sum, s) => sum + (Number(s.estimatedCost) || 0),
-      0
-    );
-    const scale = currentSum > 0 ? dayBudget / currentSum : 1;
+  return adjusted;
+}
 
-    const scaled = tuned.map((s) => ({
-      ...s,
-      estimatedCost:
-        Math.round(
-          Math.min(maxPerStop, Math.max(minPerStop, s.estimatedCost * scale)) /
-            100
-        ) * 100,
-    }));
+// 비용 범위 내로 클램핑
+function clampCost(cost) {
+  return Math.round(
+    Math.min(COST_CONFIG.MAX_PER_STOP, Math.max(COST_CONFIG.MIN_PER_STOP, cost)) / 100
+  ) * 100;
+}
 
-    return {
-      ...d,
-      stops: scaled,
-      dayCostKRW: scaled.reduce((a, b) => a + b.estimatedCost, 0),
-    };
+// 하루 일정의 비용 정규화
+function normalizeDayCosts(dayPlan, dayBudget) {
+  const stops = Array.isArray(dayPlan.stops) ? dayPlan.stops : [];
+  const numStops = Math.min(5, Math.max(1, stops.length));
+  const weights = COST_CONFIG.WEIGHT_SETS[numStops] || [];
+  const sumWeights = weights.reduce((a, b) => a + b, 0) || 1;
+
+  // 1단계: 가중치 기반 초기 비용 배분
+  const initialCosts = stops.map((stop, i) => {
+    const weight = weights[i] || 1 / stops.length;
+    let baseCost = Math.round((weight / sumWeights) * dayBudget);
+    baseCost = adjustCostByPlace(baseCost, stop.placeName);
+    return { ...stop, estimatedCost: clampCost(baseCost) };
   });
 
+  // 2단계: 예산에 맞게 스케일 조정
+  const currentSum = initialCosts.reduce((sum, s) => sum + s.estimatedCost, 0);
+  const scale = currentSum > 0 ? dayBudget / currentSum : 1;
+
+  const scaledStops = initialCosts.map((stop) => ({
+    ...stop,
+    estimatedCost: clampCost(stop.estimatedCost * scale),
+  }));
+
+  const dayCostKRW = scaledStops.reduce((sum, s) => sum + s.estimatedCost, 0);
+
+  return { ...dayPlan, stops: scaledStops, dayCostKRW };
+}
+
+// 전체 일정의 비용 정규화
+function normalizeCosts(itinerary, totalBudget, days) {
+  const dayBudget = Math.max(
+    COST_CONFIG.MIN_DAY_BUDGET,
+    Math.floor(totalBudget / Math.max(1, days))
+  );
+
+  itinerary.dayPlans = (itinerary.dayPlans || []).map((dayPlan) =>
+    normalizeDayCosts(dayPlan, dayBudget)
+  );
+
   itinerary.totalCostKRW = itinerary.dayPlans.reduce(
-    (a, d) => a + (d.dayCostKRW || 0),
+    (sum, day) => sum + (day.dayCostKRW || 0),
     0
   );
+
   return itinerary;
 }
 
@@ -183,7 +213,7 @@ app.post("/ai/itinerary", async (req, res) => {
     }
 
     const text = response.text;
-    const json = pickJSON(text);
+    const json = parseJSON(text);
     if (!json || !Array.isArray(json.dayPlans))
       return res.status(400).json({ error: "AI 응답 파싱 실패", raw: text });
 

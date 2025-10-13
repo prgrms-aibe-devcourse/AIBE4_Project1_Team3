@@ -6,20 +6,28 @@
  */
 export function formatCurrency(value, currencySymbol = "₩") {
   if (value === null || value === undefined || value === "") return "-";
-  const number = Number(String(value).replace(/[^\d.-]/g, "")); // 숫자만 추출
+  const number = Number(String(value).replace(/[^\d.-]/g, ""));
   if (isNaN(number)) return value;
   return `${currencySymbol}${number.toLocaleString("ko-KR")}`;
 }
 
 /**
- * 날짜 문자열을 표준 포맷(YYYY.MM.DD)으로 변환합니다.
- * @param {string} dateStr - 원본 날짜 문자열
+ * 문자열에서 숫자만 추출합니다.
+ * @param {string|number} value - 입력 값
+ * @returns {string} 숫자만 포함된 문자열
+ */
+export function stripDigits(value) {
+  return String(value || "").replace(/[^\d]/g, "");
+}
+
+/**
+ * 날짜 문자열을 YYYY.MM.DD 포맷으로 변환합니다.
+ * @param {string|Date} dateValue - 날짜 값
  * @returns {string} 포맷된 날짜
  */
-export function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  if (isNaN(date)) return dateStr;
+export function formatDate(dateValue) {
+  const date = new Date(dateValue);
+  if (isNaN(date)) return "-";
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
@@ -27,11 +35,14 @@ export function formatDate(dateStr) {
 }
 
 /**
- * 여행 기간 문자열을 'YYYY.MM.DD ~ YYYY.MM.DD' 형태로 정리합니다.
- * @param {string} period - 입력된 기간 문자열
- * @returns {string} 정제된 기간
+ * 두 날짜 사이의 일수를 계산합니다.
+ * @param {string|Date} startDate - 시작 날짜
+ * @param {string|Date} endDate - 종료 날짜
+ * @returns {number} 일수 (최소 1)
  */
-export function formatPeriod(period) {
-  if (!period) return "-";
-  return period.replace(/\s+/g, "").replace(/-/g, ".").replace(/~/g, " ~ ");
+export function calculateDays(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start) || isNaN(end)) return 1;
+  return Math.max(1, Math.round((end - start) / 86400000) + 1);
 }

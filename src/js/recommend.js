@@ -1,33 +1,14 @@
 import { getAiRecommendation } from "./api/ai.js";
 import { showLoading, hideLoading } from "./components/loading.js";
-import { formatCurrency } from "./utils/format.js";
+import { formatCurrency, stripDigits, formatDate } from "./utils/format.js";
 
 class NumberUtils {
-  static stripDigits(v) {
-    return String(v || "").replace(/[^\d]/g, "");
-  }
   static formatInputCurrency(input) {
     const posFromEnd = input.value.length - input.selectionStart;
-    const onlyNum = NumberUtils.stripDigits(input.value);
+    const onlyNum = stripDigits(input.value);
     input.value = onlyNum ? Number(onlyNum).toLocaleString("ko-KR") : "";
     const newPos = input.value.length - posFromEnd;
     input.setSelectionRange(newPos, newPos);
-  }
-}
-
-class DateUtils {
-  static toYmdDot(v) {
-    const d = new Date(v);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}.${mm}.${dd}`;
-  }
-  static days(start, end) {
-    const s = new Date(start),
-      e = new Date(end);
-    if (isNaN(s) || isNaN(e)) return 1;
-    return Math.max(1, Math.round((e - s) / 86400000) + 1);
   }
 }
 
@@ -143,147 +124,103 @@ class RecommendationRenderer {
     this.container = container;
   }
 
-  static tagsFrom(text = "") {
-    const t = String(text).toLowerCase();
-    const tags = [];
-    if (/초보|처음|입문|첫/.test(t)) tags.push("초보자 추천");
-    if (/도보|걸어|근거리|도심/.test(t)) tags.push("도보 접근");
-    if (/현지|지역 주민|로컬|시장/.test(t)) tags.push("현지 체험");
-    if (/관광|인기|핫플|랜드마크/.test(t)) tags.push("관광지 밀집");
-    if (/야경|밤|저녁/.test(t)) tags.push("야경");
-    if (/패스|주유패스/.test(t)) tags.push("패스 혜택");
-    return tags.slice(0, 3);
+  static calculateStopCost(stop) {
+    if (!Array.isArray(stop.costBreakdown)) return Number(stop.estimatedCost) || 0;
+    return stop.costBreakdown.reduce((acc, it) => acc + (Number(it.subtotalKRW) || 0), 0);
   }
 
-  static sumKRWFromBreakdown(cb) {
-    if (!Array.isArray(cb)) return 0;
-    return cb.reduce((acc, it) => acc + (Number(it.subtotalKRW) || 0), 0);
-  }
-
-  render(itinerary) {
-    const days = itinerary?.dayPlans || [];
-    if (!days.length) {
-      this.container.innerHTML = "<p>추천 결과가 없습니다.</p>";
-      return;
-    }
-
-    const daySums = days.map(
-      (dp) =>
-        Number(dp.dayTotalKRW) ||
-        (dp.stops || []).reduce((a, s) => {
-          const fromCB = RecommendationRenderer.sumKRWFromBreakdown(
-            s.costBreakdown
-          );
-          return a + (fromCB || Number(s.estimatedCost) || 0);
-        }, 0)
-    );
-
-    const avgDaily = daySums.length
-      ? Math.round(daySums.reduce((a, b) => a + b, 0) / daySums.length)
-      : 0;
-
-    this.container.innerHTML = days
-      .map((dp, idx) => {
-        const daySum = daySums[idx] || 0;
-        const pct = avgDaily
-          ? Math.min(100, Math.round((daySum / avgDaily) * 100))
-          : 0;
-        const tags = RecommendationRenderer.tagsFrom(
-          `${dp.dayReason || ""} ${(dp.stops || [])
-            .map((s) => s.stopReason || "")
-            .join(" ")}`
-        );
-
-        const rows = (dp.stops || [])
-          .map((s, i) => {
-            const stopSum =
-              RecommendationRenderer.sumKRWFromBreakdown(s.costBreakdown) ||
-              Number(s.estimatedCost) ||
-              0;
-            const cbHTML =
-              Array.isArray(s.costBreakdown) && s.costBreakdown.length
-                ? `
-              <details class="cost-detail">
-                <summary>비용 근거 보기</summary>
-                <ul style="margin:.4rem 0 0 .8rem; padding:0; list-style: disc;">
-                  ${s.costBreakdown
-                    .map((item) => {
-                      const unit = Number(item.unitJPY) || 0;
-                      const qty = Number(item.qty) || 1;
-                      const subJPY = Number(item.subtotalJPY) || unit * qty;
-                      const subKRW = Number(item.subtotalKRW) || 0;
-                      const basis = item.basis ? ` – ${item.basis}` : "";
-                      const conf = isFinite(item.confidence)
-                        ? ` (신뢰도 ${item.confidence})`
-                        : "";
-                      return `
-                        <li>
-                          <strong>${
-                            item.category || "기타"
-                          }</strong>${basis}${conf}<br/>
-                          단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
-                          원화: ${formatCurrency(subKRW)}
-                        </li>`;
-                    })
-                    .join("")}
-                </ul>
-              </details>`
-                : s.costReason
-                ? `
-              <details class="cost-detail">
-                <summary>비용 근거 보기</summary>
-                <p>${s.costReason}</p>
-              </details>`
-                : "";
-
-            return `
-              <li class="stops-row">
-                <span class="idx">${i + 1}</span>
-                <div class="place">
-                  <div class="name">${s.placeName}</div>
-                  <div class="sub">${s.summary || ""}</div>
-                  ${
-                    s.stopReason
-                      ? `<p class="stop-reason">${s.stopReason}</p>`
-                      : ""
-                  }
-                  ${cbHTML}
-                </div>
-                <span class="cost">${formatCurrency(stopSum)}</span>
-              </li>`;
-          })
-          .join("");
+  static renderCostBreakdown(stop) {
+    if (Array.isArray(stop.costBreakdown) && stop.costBreakdown.length) {
+      const items = stop.costBreakdown.map((item) => {
+        const unit = Number(item.unitJPY) || 0;
+        const qty = Number(item.qty) || 1;
+        const subJPY = Number(item.subtotalJPY) || unit * qty;
+        const subKRW = Number(item.subtotalKRW) || 0;
+        const basis = item.basis ? ` – ${item.basis}` : "";
+        const conf = isFinite(item.confidence) ? ` (신뢰도 ${item.confidence})` : "";
 
         return `
-          <article class="route-card">
-            <header class="route-card__head">
-              <h4>Day ${dp.day} — ${dp.title || ""}</h4>
-            </header>
-        
-            <div class="route-card__body" style="display: none;">
-              <p class="route-card__reason">
-                ${
-                  dp.dayReason ||
-                  "인기와 접근성을 고려해 효율적인 동선으로 구성했습니다."
-                }
-              </p>
-        
-              <div class="budgetbar">
-                <div class="bar"><span style="width:${pct}%"></span></div>
-                <div class="bar-meta">
-                  <span>일자 합계</span>
-                  <strong>${formatCurrency(daySum)}</strong>
-                </div>
-              </div>
-        
-              <ol class="stops-table">${rows}</ol>
-            </div>
-          </article>
-        `;
-      })
-      .join("");
+          <li>
+            <strong>${item.category || "기타"}</strong>${basis}${conf}<br/>
+            단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
+            원화: ${formatCurrency(subKRW)}
+          </li>`;
+      }).join("");
 
-    // 카드는 하나만
+      return `
+        <details class="cost-detail">
+          <summary>비용 근거 보기</summary>
+          <ul style="margin:.4rem 0 0 .8rem; padding:0; list-style: disc;">
+            ${items}
+          </ul>
+        </details>`;
+    }
+
+    if (stop.costReason) {
+      return `
+        <details class="cost-detail">
+          <summary>비용 근거 보기</summary>
+          <p>${stop.costReason}</p>
+        </details>`;
+    }
+
+    return "";
+  }
+
+  static renderStop(stop, index) {
+    const stopSum = RecommendationRenderer.calculateStopCost(stop);
+    const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+
+    return `
+      <li class="stops-row">
+        <span class="idx">${index + 1}</span>
+        <div class="place">
+          <div class="name">${stop.placeName}</div>
+          <div class="sub">${stop.summary || ""}</div>
+          ${stop.stopReason ? `<p class="stop-reason">${stop.stopReason}</p>` : ""}
+          ${cbHTML}
+        </div>
+        <span class="cost">${formatCurrency(stopSum)}</span>
+      </li>`;
+  }
+
+  static renderDayCard(dayPlan, daySum, avgDaily) {
+    const pct = avgDaily ? Math.min(100, Math.round((daySum / avgDaily) * 100)) : 0;
+    const rows = (dayPlan.stops || []).map((s, i) => RecommendationRenderer.renderStop(s, i)).join("");
+
+    return `
+      <article class="route-card">
+        <header class="route-card__head">
+          <h4>Day ${dayPlan.day} — ${dayPlan.title || ""}</h4>
+        </header>
+
+        <div class="route-card__body" style="display: none;">
+          <p class="route-card__reason">
+            ${dayPlan.dayReason || "인기와 접근성을 고려해 효율적인 동선으로 구성했습니다."}
+          </p>
+
+          <div class="budgetbar">
+            <div class="bar"><span style="width:${pct}%"></span></div>
+            <div class="bar-meta">
+              <span>일자 합계</span>
+              <strong>${formatCurrency(daySum)}</strong>
+            </div>
+          </div>
+
+          <ol class="stops-table">${rows}</ol>
+        </div>
+      </article>
+    `;
+  }
+
+  calculateDaySums(days) {
+    return days.map((dp) => {
+      return Number(dp.dayTotalKRW) ||
+        (dp.stops || []).reduce((a, s) => a + RecommendationRenderer.calculateStopCost(s), 0);
+    });
+  }
+
+  attachCardToggleEvents() {
     const cards = this.container.querySelectorAll(".route-card");
     cards.forEach((card) => {
       const head = card.querySelector(".route-card__head");
@@ -293,10 +230,28 @@ class RecommendationRenderer {
         this.container.querySelectorAll(".route-card__body").forEach((b) => {
           if (b !== body) b.style.display = "none";
         });
-
         body.style.display = body.style.display === "none" ? "block" : "none";
       });
     });
+  }
+
+  render(itinerary) {
+    const days = itinerary?.dayPlans || [];
+    if (!days.length) {
+      this.container.innerHTML = "<p>추천 결과가 없습니다.</p>";
+      return;
+    }
+
+    const daySums = this.calculateDaySums(days);
+    const avgDaily = daySums.length
+      ? Math.round(daySums.reduce((a, b) => a + b, 0) / daySums.length)
+      : 0;
+
+    this.container.innerHTML = days
+      .map((dp, idx) => RecommendationRenderer.renderDayCard(dp, daySums[idx] || 0, avgDaily))
+      .join("");
+
+    this.attachCardToggleEvents();
   }
 }
 
@@ -333,7 +288,7 @@ class AppController {
     const start = this.start?.value;
     const end = this.end?.value;
     const people = (this.people?.value || "").trim();
-    const budgetNum = Number(NumberUtils.stripDigits(this.budget?.value || ""));
+    const budgetNum = Number(stripDigits(this.budget?.value || ""));
     const city = (this.city?.value || "오사카").trim();
     if (!start || !end || !people || !budgetNum) {
       alert("기간 / 인원 / 경비를 모두 입력해주세요.");
@@ -343,7 +298,7 @@ class AppController {
     try {
       const itinerary = await getAiRecommendation({
         city,
-        period: `${DateUtils.toYmdDot(start)} ~ ${DateUtils.toYmdDot(end)}`,
+        period: `${formatDate(start)} ~ ${formatDate(end)}`,
         startDate: start,
         endDate: end,
         people,
