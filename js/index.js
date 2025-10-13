@@ -7,9 +7,19 @@ window.handleFormSubmit = async function (event) {
   const budget = form.elements.budget.value;
   const people = form.elements.people.value;
 
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML =
-    '<p class="text-center">Gemini가 여행지를 추천하는 중입니다... 잠시만 기다려주세요. 🤖</p>';
+  const resultsDiv = document.getElementById("results-container");
+
+  document.getElementById("recommendation-grid").classList.add("hidden");
+
+  let loadingP = document.getElementById("loading-message");
+  if (!loadingP) {
+    loadingP = document.createElement("p");
+    loadingP.id = "loading-message";
+    loadingP.className = "text-center";
+    resultsDiv.prepend(loadingP);
+  }
+  loadingP.innerHTML = "여행지를 추천하는 중입니다... 잠시만 기다려주세요.";
+  loadingP.classList.remove("hidden");
 
   try {
     const response = await fetch("http://localhost:3000/api/recommend", {
@@ -40,19 +50,28 @@ window.handleFormSubmit = async function (event) {
 };
 
 function displayResults(recommendations) {
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML = ""; // 이전 결과 초기화
+  const loadingP = document.getElementById("loading-message");
+  if (loadingP) loadingP.classList.add("hidden");
 
-  if (recommendations && recommendations.length > 0) {
-    const ol = document.createElement("ol");
-    ol.className = "list-decimal list-inside space-y-2 text-left";
-    recommendations.forEach((rec) => {
-      const li = document.createElement("li");
-      li.innerHTML = `<strong class="font-semibold text-gray-900">${rec.country}</strong>: ${rec.reason}`;
-      ol.appendChild(li);
-    });
-    resultsDiv.appendChild(ol);
-  } else {
-    resultsDiv.innerHTML = "<p>추천 결과를 받지 못했습니다.</p>";
-  }
+  const recommendationGrid = document.getElementById("recommendation-grid");
+  recommendationGrid.classList.remove("hidden");
+
+  recommendations.forEach((rec, index) => {
+    const rank = index + 1;
+    document.getElementById(`country-${rank}`).innerText = rec.country;
+    document.getElementById(`current-rate-${rank}`).innerText =
+      rec.current_rate;
+    document.getElementById(`future_rate-${rank}`).innerText = rec.future_rate;
+  });
 }
+
+function getFormattedDate(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function initializeForm() {
+  const today = getFormattedDate();
+  document.querySelector('input[name="start_date"]').value = today;
+  document.querySelector('input[name="end_date"]').value = today;
+}
+initializeForm();
