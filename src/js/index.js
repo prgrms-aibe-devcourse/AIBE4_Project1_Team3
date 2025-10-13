@@ -35,12 +35,7 @@ window.handleFormSubmit = async function (event) {
       throw new Error(errorData.error || "서버에서 오류가 발생했습니다.");
     }
 
-    const text = await response.text();
-    const jsonText = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    const data = JSON.parse(jsonText);
+    const data = await response.json();
 
     displayResults(data.recommendations);
   } catch (error) {

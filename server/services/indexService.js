@@ -30,7 +30,20 @@ async function recommend({ startDate, endDate, budget, people }) {
   const response = await result.response;
   const text = await response.text();
 
-  return text;
+  try {
+    // AI가 생성한 텍스트에서 불필요한 마크다운(` ```json `)을 제거
+    const cleanedText = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const jsonObject = JSON.parse(cleanedText);
+
+    return jsonObject;
+  } catch (error) {
+    console.error("JSON 파싱 오류:", error);
+    throw new Error("AI가 유효하지 않은 형식의 응답을 생성했습니다.");
+  }
 }
 
 module.exports = {

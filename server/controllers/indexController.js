@@ -11,14 +11,14 @@ router.post("/recommend", async (req, res) => {
   }
 
   try {
-    const resultText = await indexService.recommend({
+    const result = await indexService.recommend({
       startDate,
       endDate,
       budget,
       people,
     });
 
-    res.send(resultText);
+    res.json(result);
   } catch (error) {
     console.error("API 호출 erorr:", error);
     res.status(500).json({ error: "API 호출 중 오류가 발생했습니다." });
