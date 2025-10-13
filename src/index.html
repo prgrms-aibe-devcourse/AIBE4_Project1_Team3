@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TourRate</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -148,117 +149,10 @@
             환율이 하락 추세인 국가들을 확인하세요
           </p>
         </div>
-
         <div
           id="recommendation-grid"
           class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-        >
-          <div
-            class="bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg"
-          >
-            <div class="flex justify-between items-center">
-              <h3 class="font-bold text-lg">
-                <span id="country-1"></span>
-                <span
-                  id="unit-1"
-                  class="text-sm font-medium text-gray-500"
-                ></span>
-              </h3>
-              <!-- <span
-            class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full"
-            >-1.7%</span
-            > -->
-            </div>
-            <div class="mt-4 flex justify-between text-sm text-gray-600">
-              <p>
-                현재 환율:
-                <span id="current-rate-1" class="font-bold text-black"></span>
-              </p>
-              <p>
-                출발 날짜 예측 환율:
-                <span id="future_rate-1" class="font-bold text-black"></span>
-              </p>
-            </div>
-            <div class="mt-4">
-              <canvas id="chart-1"></canvas>
-            </div>
-            <button
-              class="mt-6 w-full text-center py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
-            >
-              추천 루트 보기
-            </button>
-          </div>
-          <div
-            class="bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg"
-          >
-            <div class="flex justify-between items-center">
-              <h3 class="font-bold text-lg">
-                <span id="country-2"></span>
-                <span
-                  id="unit-2"
-                  class="text-sm font-medium text-gray-500"
-                ></span>
-              </h3>
-              <!-- <span
-        class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full"
-        >-1.7%</span
-        > -->
-            </div>
-            <div class="mt-4 flex justify-between text-sm text-gray-600">
-              <p>
-                현재 환율:
-                <span id="current-rate-2" class="font-bold text-black"></span>
-              </p>
-              <p>
-                출발 날짜 예측 환율:
-                <span id="future_rate-2" class="font-bold text-black"></span>
-              </p>
-            </div>
-            <div class="mt-4">
-              <canvas id="chart-2"></canvas>
-            </div>
-            <button
-              class="mt-6 w-full text-center py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
-            >
-              추천 루트 보기
-            </button>
-          </div>
-          <div
-            class="bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg"
-          >
-            <div class="flex justify-between items-center">
-              <h3 class="font-bold text-lg">
-                <span id="country-3"></span>
-                <span
-                  id="unit-3"
-                  class="text-sm font-medium text-gray-500"
-                ></span>
-              </h3>
-              <!-- <span
-    class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full"
-    >-1.7%</span
-    > -->
-            </div>
-            <div class="mt-4 flex justify-between text-sm text-gray-600">
-              <p>
-                현재 환율:
-                <span id="current-rate-3" class="font-bold text-black"></span>
-              </p>
-              <p>
-                출발 날짜 예측 환율:
-                <span id="future_rate-3" class="font-bold text-black"></span>
-              </p>
-            </div>
-            <div class="mt-4">
-              <canvas id="chart-3"></canvas>
-            </div>
-            <button
-              class="mt-6 w-full text-center py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
-            >
-              추천 루트 보기
-            </button>
-          </div>
-        </div>
+        ></div>
       </div>
     </main>
 
