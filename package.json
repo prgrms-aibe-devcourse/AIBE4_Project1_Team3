@@ -4,5 +4,29 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0"
-  }
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "scripts": {
+    "dev": "nodemon server/server.js"
+  },
+  "name": "aibe4_project1_team3",
+  "version": "1.0.0",
+  "description": "디버깅 노예들의 레포입니다.",
+  "main": "aibe4_project1_team3",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prgrms-aibe-devcourse/AIBE4_Project1_Team3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/prgrms-aibe-devcourse/AIBE4_Project1_Team3/issues"
+  },
+  "homepage": "https://github.com/prgrms-aibe-devcourse/AIBE4_Project1_Team3#readme"
 }

@@ -33,6 +33,58 @@ async function recommend({ startDate, endDate, budget, people }) {
   return text;
 }
 
+// 환률 api
+
+async function fetchExchangeRate(searchDate) {
+  const url = `${EXCHANGE_API_URL}?authkey=${EXCHANGE_API_KEY}&searchdate=${searchDate}&data=AP01`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.length === 0 || data.errCd) {
+      console.warn(
+        `[${searchDate}] 데이터 없음:`,
+        data.errMsg || "데이터가 비어있습니다."
+      );
+      return null;
+    }
+    return data;
+  } catch (error) {
+    console.error(`API 호출 중 오류 발생 (${searchDate}):`, error);
+    return null;
+  }
+}
+
+// 날짜 포멧팅 함수
+
+function formatDateToYYYYMMDD(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+// 30일 단위로 휴일제외한 날짜
+
+function subtractBusinessDays(startDate, daysToSubtract) {
+  const businessDays = [];
+  const date = new Date(startDate.getTime());
+  let businessDaysCount = daysToSubtract;
+
+  while (businessDaysCount > 0) {
+    date.setDate(date.getDate() - 30);
+    const dayOfWeek = date.getDay(); // 0: 일, 6: 토
+    const isBusinessDay = dayOfWeek !== 0 && dayOfWeek !== 6;
+
+    if (isBusinessDay) {
+      businessDays.push(formatDateToYYYYMMDD(date));
+      businessDaysCount--;
+    }
+  }
+  return businessDays;
+}
+
 module.exports = {
   recommend,
+  fetchExchangeRate,
+  subtractBusinessDays,
 };

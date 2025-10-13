@@ -89,7 +89,8 @@ const currencyMap = {
 };
 
 function renderGraph() {
-
+  // const response = await fetch("http://localhost:3000/api/exchange");
+  // const apiData = await response.json();
   // const datasets = targetCurrencies
   //   7일치 데이터가 있는 통화만 필터링
   //   .filter(
@@ -107,6 +108,7 @@ function renderGraph() {
   //   }));
 
   // 3. Chart.js 렌더링
+  // console.data(apiData);
 
   const containerGraph = document.querySelector("#recommendation-grid");
   Object.keys(currencyMap).forEach((code) => {
