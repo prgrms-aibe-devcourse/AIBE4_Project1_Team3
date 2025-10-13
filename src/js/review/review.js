@@ -43,8 +43,10 @@ document.getElementById("prev").onclick = () => {
 
 // 다음
 document.getElementById("next").onclick = () => {
-  page++;
-  loadPosts();
+  if (page < totalPages) {
+    page++;
+    loadPosts();
+  }
 };
 
 function makeStars(rating) {

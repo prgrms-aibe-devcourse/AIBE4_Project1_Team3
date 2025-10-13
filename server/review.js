@@ -25,8 +25,8 @@ app.get("/review", (req, res) => {
 
 // 리뷰 데이터 가져옴
 app.get("/api/review", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = 8 || 10;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = 8;
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
