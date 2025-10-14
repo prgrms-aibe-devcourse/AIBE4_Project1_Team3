@@ -18,7 +18,7 @@ async function loadPosts() {
       (post) =>
         `<tr onclick="goDetail(${post.id})" style="cursor:pointer;">
                 <td>${post.title}</td>
-                <td>${makeStars(post.rate)}</td>
+                <td>${makeStars(post.rating)}</td>
                 <td>${formatDate(post.created_at)}</td>
               </tr>`
     )
