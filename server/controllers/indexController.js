@@ -32,10 +32,10 @@ router.get("/exchange", async (req, res) => {
 
     const today = new Date();
     let day = indexService.subtractBusinessDays(today, 6); // 오늘시점으로 6개월 전 날짜를 시작점으로...
-
+    day.sort();
     for (let i = 0; i < day.length; i++) {
-      day.sort();
       const searchDate = day[i];
+      const data = await indexService.fetchExchangeRate(searchDate);
       const data = await indexService.fetchExchangeRate(searchDate);
       labels.push(day[i].slice(4, 6) + "월");
 
