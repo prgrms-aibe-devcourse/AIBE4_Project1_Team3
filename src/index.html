@@ -95,10 +95,11 @@
               <div>
                 <p class="text-xs text-gray-500">사용 가능 예산 (원)</p>
                 <input
-                  type="number"
+                  type="text"
                   name="budget"
-                  placeholder="1000000"
-                  min="0"
+                  id="budget-input"
+                  placeholder="1,000,000"
+                  oninput="formatBudget(this)"
                   class="font-semibold w-full max-w-[120px] p-1 rounded border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
               </div>

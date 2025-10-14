@@ -4,7 +4,7 @@ window.handleFormSubmit = async function (event) {
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
-  const budget = form.elements.budget.value;
+  const budget = form.elements.budget.value.replace(/,/g, "");
   const people = form.elements.people.value;
 
   const resultsDiv = document.getElementById("results-container");
@@ -55,13 +55,21 @@ function displayResults(recommendations) {
     const rank = index + 1;
     document.getElementById(`country-${rank}`).innerText = rec.country;
     document.getElementById(`current-rate-${rank}`).innerText =
-      rec.current_rate;
+      rec.current_rate.toLocaleString("ko-KR");
     document.getElementById(`forcasted_exchange_rate-${rank}`).innerText =
-      rec.forcasted_exchange_rate;
+      rec.forcasted_exchange_rate.toLocaleString("ko-KR");
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
-    document.getElementById(`per_cost-${rank}`).innerText = rec.per_cost;
+    document.getElementById(`per_cost-${rank}`).innerText =
+      rec.per_cost.toLocaleString("ko-KR") + "원";
   });
 }
+
+window.formatBudget = function (input) {
+  let value = input.value.replace(/[^\d]/g, "");
+  if (value) {
+    input.value = parseInt(value, 10).toLocaleString("ko-KR");
+  }
+};
 
 function getFormattedDate(date = new Date()) {
   return date.toISOString().slice(0, 10);
