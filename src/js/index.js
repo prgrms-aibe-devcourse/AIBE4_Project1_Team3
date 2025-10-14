@@ -80,38 +80,39 @@ initializeForm();
 
 document.addEventListener("DOMContentLoaded", renderGraph);
 const currencyMap = {
-  USD: { name: "미국", unit: "달러", color: "#6366F1" }, // Indigo
-  EUR: { name: "유럽", unit: "유로", color: "#EF4444" }, // Red
-  JPY: { name: "일본", unit: "100엔", color: "#10B981" }, // Emerald
-  CNY: { name: "중국", unit: "위안", color: "#F59E0B" }, // Amber
-  AUD: { name: "호주", unit: "달러", color: "#3B82F6" }, // Blue
-  GBP: { name: "영국", unit: "파운드", color: "#A855F7" }, // Violet
+  USD: { name: "미국", unit: "달러" },
+  EUR: { name: "유럽", unit: "유로" },
+  JPY100: { name: "일본", unit: "100엔" },
+  CNH: { name: "중국", unit: "위안" },
+  THB: { name: "태국", unit: "바트" },
+  GBP: { name: "영국", unit: "파운드" },
 };
 
-function renderGraph() {
-  // const response = await fetch("http://localhost:3000/api/exchange");
-  // const apiData = await response.json();
-  // const datasets = targetCurrencies
-  //   7일치 데이터가 있는 통화만 필터링
-  //   .filter(
-  //     (code) =>
-  //       currencyData[code] && currencyData[code].length === labels.length
-  //   )
-  //   .map((code) => ({
-  //     label: `${code} 환율`,
-  //     data: currencyData[code],
-  //     borderColor: colors[code],
-  //     backgroundColor: colors[code] + "20",
-  //     borderWidth: 2,
-  //     fill: false,
-  //     tension: 0.2,
-  //   }));
-
+async function renderGraph() {
+  const response = await fetch("http://localhost:3000/api/exchange");
+  const apiData = await response.json();
+  const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
-  // console.data(apiData);
-
+  console.log(apiData);
   const containerGraph = document.querySelector("#recommendation-grid");
   Object.keys(currencyMap).forEach((code) => {
+    const countryInfo = currencyMap[code];
+    const rateData = currencyData[code];
+    //환률 변동 계산
+    const currentRate = rateData[rateData.length - 1];
+    const initialRate = rateData[0];
+    const rateChange = ((currentRate - initialRate) / initialRate) * 100;
+    const trendText = rateChange.toFixed(2) + "%";
+
+    let trendColorClass;
+    if (rateChange < 0) {
+      trendColorClass = "bg-blue-100 text-blue-800"; // 하락 (좋음)
+    } else if (rateChange > 0) {
+      trendColorClass = "bg-red-100 text-red-800"; // 상승 (나쁨)
+    } else {
+      trendColorClass = "bg-gray-100 text-gray-800"; // 변화 없음
+    }
+
     const item = document.createElement("div");
     const canvasId = `chart-${code}`;
     item.setAttribute(
@@ -121,26 +122,24 @@ function renderGraph() {
     item.innerHTML = `
             <div class="flex justify-between items-center">
               <h3 class="font-bold text-lg">
-                ${currencyMap[code].name}
-                <span class="text-sm font-medium text-gray-500">${currencyMap[code].unit}</span>
+                ${countryInfo.name}
+                <span class="text-sm font-medium text-gray-500">${code} ${
+      countryInfo.unit
+    }</span>
               </h3>
               <span
-                class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full"
-                >-1.7%</span
+                class="${trendColorClass} bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full"
+                >${rateChange > 0 ? "+" : ""}${trendText}</span
               >
             </div>
             <div class="mt-4 flex justify-between text-sm text-gray-600">
-              <p>현재 환율: <span class="font-bold text-black">¥ 820</span></p>
+              <p>현재 환율: <span class="font-bold text-black">${currentRate.toLocaleString()}원</span></p>
+              <p>6개월전 환율: <span class="font-bold text-black">${initialRate.toLocaleString()}원</span></p>
               
             </div>
             <div class="mt-4">
               <canvas id="${canvasId}"></canvas>
             </div>
-            <button
-              class="mt-6 w-full text-center py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
-            >
-              추천 루트 보기
-            </button>
             `;
     containerGraph.appendChild(item);
 
@@ -173,7 +172,6 @@ function renderGraph() {
         },
       },
     };
-
     const ctx = document.querySelector("#" + canvasId).getContext("2d");
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, "rgba(99, 102, 241, 0.2)");
@@ -182,10 +180,11 @@ function renderGraph() {
     new Chart(ctx, {
       type: "line",
       data: {
-        labels: [1, 2, 3, 4, 5],
+        labels: labels,
         datasets: [
           {
-            data: [30000, 35000, 32000, 38000, 35000],
+            label: `${code} 환율`,
+            data: rateData,
             borderColor: "#6366F1",
             backgroundColor: gradient,
             borderWidth: 2,
@@ -194,10 +193,6 @@ function renderGraph() {
           },
         ],
       },
-      //   data: {
-      //     labels: labels, // 서버에서 받은 라벨 사용
-      //     datasets: datasets, // 서버에서 가공된 데이터셋 사용
-      //   },
 
       options: {
         ...commonOptions,
@@ -205,7 +200,7 @@ function renderGraph() {
           x: {
             grid: { display: false },
             ticks: { color: fontColor },
-            title: { display: true, text: "영업일", color: fontColor },
+            title: { display: true, text: "개월", color: fontColor },
           },
           y: {
             grid: { color: gridColor },

@@ -34,13 +34,17 @@ router.get("/exchange", async (req, res) => {
     let day = indexService.subtractBusinessDays(today, 6); // 오늘시점으로 6개월 전 날짜를 시작점으로...
 
     for (let i = 0; i < day.length; i++) {
+      day.sort();
       const searchDate = day[i];
       const data = await indexService.fetchExchangeRate(searchDate);
       labels.push(day[i].slice(4, 6) + "월");
 
       if (data) {
         data.forEach((item) => {
-          const code = item.cur_unit;
+          let code = "";
+          if (item.cur_unit == "JPY(100)") code = "JPY100";
+          else code = item.cur_unit;
+
           // 천 단위 콤마 제거 후 숫자로 변환
           const rate = parseFloat(item.deal_bas_r.replace(/,/g, ""));
 
@@ -51,7 +55,7 @@ router.get("/exchange", async (req, res) => {
         });
       } else {
         // 데이터가 없는 경우, 해당 일자에는 null을 채워 차트에서 공백으로 표시
-        // 이전에 수집된 모든 통화에 null을 추가 // 추후 다르게 처리할 예정
+        // 이전에 수집된 모든 통화에 null을 추가
         Object.keys(currencyData).forEach((code) => {
           currencyData[code].push(null);
         });

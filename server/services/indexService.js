@@ -4,6 +4,9 @@ const API_KEY = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
+const EXCHANGE_API_KEY = process.env.EXCHANGE_API_KEY;
+const EXCHANGE_API_URL = process.env.EXCHANGE_API_URL;
+
 async function recommend({ startDate, endDate, budget, people }) {
   const prompt = `
       당신은 여행 전문가입니다. 아래 조건에 맞는 여행지를 추천해주세요.
@@ -71,14 +74,14 @@ function subtractBusinessDays(startDate, daysToSubtract) {
   let businessDaysCount = daysToSubtract;
 
   while (businessDaysCount > 0) {
-    date.setDate(date.getDate() - 30);
     const dayOfWeek = date.getDay(); // 0: 일, 6: 토
     const isBusinessDay = dayOfWeek !== 0 && dayOfWeek !== 6;
 
     if (isBusinessDay) {
       businessDays.push(formatDateToYYYYMMDD(date));
       businessDaysCount--;
-    }
+      date.setMonth(date.getMonth() - 1);
+    } else date.setDate(date.getDate() - 1);
   }
   return businessDays;
 }
