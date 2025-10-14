@@ -61,19 +61,32 @@ function analyzeRateTrend(currentRate, historicalRates) {
 }
 
 async function recommend({ startDate, endDate, budget, people }) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  // 두 날짜 간의 차이(밀리초)를 일수로 변환 (시작일과 종료일 모두 포함)
+  const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
   const contextDataForPrompt = candidateCountries.map((country) => {
     const rates = exchangeRatesData[country.currency];
     const unit = currencyUnitMap[country.currency];
     const trend = analyzeRateTrend(rates.current, rates.historical);
 
+    let currentExchangeRateDisplay;
+    if (country.currency === "JPY") {
+      currentExchangeRateDisplay = `${rates.current.toFixed(2)} KRW / 100 ${
+        country.currency
+      }`;
+    } else {
+      currentExchangeRateDisplay = `${rates.current.toFixed(2)} KRW / 1 ${
+        country.currency
+      }`;
+    }
+
     return {
       name: country.name,
       currency: country.currency,
-      current_exchange_rate: `${(rates.current / unit).toFixed(
-        2
-      )} KRW / ${unit} ${country.currency}`,
+      current_exchange_rate: currentExchangeRateDisplay,
       exchange_rate_trend_6m_avg: trend,
-      estimated_daily_spending: 100000, // 예: 10만원
     };
   });
 
@@ -86,6 +99,10 @@ async function recommend({ startDate, endDate, budget, people }) {
       # 임무
       사용자 요청과 아래 국가별 경제 데이터를 종합하여, 사용자에게 가장 적합한 여행 국가 3곳을 추천하고 그 이유를 간략히 설명해 주세요.
 
+      # 제한 조건
+      당신은 반드시 아래에 제공된 국가 데이터만 고려해야 합니다.
+      candidateCountries 배열에 없는 국가는 어떤 이유로든 추천하지 마세요.
+
       # 사용자 정보
       - 여행 기간: ${startDate} 부터 ${endDate} 까지
       - 총 예산: ${budget}원(KRW)
@@ -95,21 +112,29 @@ async function recommend({ startDate, endDate, budget, people }) {
       # 국가별 환율 및 지표
       ${contextDataString}
 
+      # 추가 과업: 여행 경비 추정
+      주어진 환율 데이터 외에, 당신의 지식 기반을 활용하여 아래 항목을 추정해주세요.
+      1.  **1인당 평균 왕복 항공권 비용**: ${startDate} ~ ${endDate} 기간의 일반적인 비용을 추정하세요.
+      2.  **1박당 평균 숙소 비용**: 해당 국가의 에어비앤비 수준의 비용을 추정하세요.
+      3.  **1인당 일일 예상 경비**: 식비, 교통비, 관광비 등을 포함하여 약 100,000원을 기준으로 하되, 각 국가의 물가를 고려하여 적절히 조정하세요.
+
       # 수행 규칙 및 논리
-      1.  'exchange_rate_trend_6m_avg' 항목을 핵심적으로 분석하세요.
-      2.  과거 6개월의 환율 데이터를 이용해, 단순 선형 추세를 기반으로 다음 달 예상 환율을 추정하세요.
-          - 예: 최근 6개월 환율의 평균 변화율(%)을 계산해 미래 환율을 추정.
-      3.  예측한 환율이 낮을수록(원화 기준 외화 약세) 여행비용이 절약되므로 점수를 높이세요.
-      4.  사용자 예산과 국가별 예상 경비('estimated_daily_spending')를 함께 고려하세요.
-      5.  최종적으로 '예상 환율'과 '예산 효율성'을 종합하여 상위 3개국을 추천하세요.
+      1.  'exchange_rate_trend_6m_avg' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
+      2.  과거 6개월의 환율 데이터를 이용해, 단순 선형 추세를 기반으로 다음 달 예상 환율을 추정하여 'forcasted_exchange_rate' 항목에 반영하세요.
+      3.  위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비('per_cost')**를 계산하세요.
+          -   **계산식: (추정 항공권 비용) + (추정 1박 숙소 비용 * ${durationDays}-1) + (조정된 일일 경비 * ${durationDays})**
+      4.  계산된 'per_cost'가 사용자의 1인당 예산(${
+        budget / people
+      }원) 내에 들어오는지 확인하여 '예산 효율성'을 평가하세요.
+      5.  최종적으로 '예상 환율(유리함)', '예산 효율성'을 종합하여 가장 합리적인 상위 3개국을 추천하세요
 
       # 출력 형식
       답변은 반드시 아래와 같은 JSON 형식으로만 제공해주세요. 다른 설명은 붙이지 마세요.
       {
         "recommendations": [
-          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율"},
-          {"rank": 2, "country": "추천 국가명", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율"},
-          {"rank": 3, "country": "추천 국가명", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율"}
+          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
+          {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
+          {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"}
         ]
       }
     `;

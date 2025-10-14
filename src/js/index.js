@@ -59,6 +59,7 @@ function displayResults(recommendations) {
     document.getElementById(`forcasted_exchange_rate-${rank}`).innerText =
       rec.forcasted_exchange_rate;
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
+    document.getElementById(`per_cost-${rank}`).innerText = rec.per_cost;
   });
 }
 
