@@ -107,7 +107,8 @@
       }
 
       .content {
-        margin-bottom: 20px;
+        margin-bottom: 32px;
+        font-size: 18px;
       }
 
       .content__grid {
@@ -278,6 +279,23 @@
         color: #333;
         font-size: 0.92rem;
       }
+
+      .pwdInput {
+        width: 240px;
+        padding: 8px;
+        border: 1px solid #acacac;
+        border-radius: 6px;
+        font-size: 0.95rem;
+      }
+
+      .deleteBtn {
+        width: 90px;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #e10000;
+        background-color: #eb0000;
+        color: #ffffff;
+      }
     </style>
   </head>
   <body>
@@ -315,9 +333,14 @@
 
       <div class="content" id="content">asdoijiodwjdiajdiawejfiejf</div>
 
-      <form id="deleteForm">
-        <input name="password" placeholder="비밀번호" required />
-        <button type="submit">삭제하기</button>
+      <form id="deleteForm" style="text-align: end">
+        <input
+          name="password"
+          placeholder="비밀번호"
+          class="pwdInput"
+          required
+        />
+        <button type="submit" class="deleteBtn">삭제하기</button>
       </form>
     </main>
 

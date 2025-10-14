@@ -15,14 +15,18 @@ async function loadPosts() {
   const container = document.getElementById("postsBody");
   container.innerHTML = result.data
     .map(
-      (post) =>
-        `<tr onclick="goDetail(${post.id})" style="cursor:pointer;">
-                <td>${post.title}</td>
-                <td>${makeStars(post.rating)}</td>
-                <td>${formatDate(post.created_at)}</td>
-              </tr>`
+      (post) => `
+      <tr data-id="${post.id}" style="cursor:pointer;">
+        <td>${post.title}</td>
+        <td>${makeStars(post.rating)}</td>
+        <td>${formatDate(post.created_at)}</td>
+      </tr>`
     )
     .join("");
+
+  container.querySelectorAll("tr").forEach((tr) => {
+    tr.addEventListener("click", () => goDetail(tr.dataset.id));
+  });
 
   totalPages = result.totalPages;
   document.getElementById("pageInfo").textContent = `${page} / ${totalPages}`;
