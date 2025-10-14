@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 여행 경로 추천 | TourRate</title>
+
+    <link rel="stylesheet" href="./css/common.css" />
+    <link rel="stylesheet" href="./css/recommend.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <header class="header header--dark">
+      <div class="header__inner">
+        <h1 class="header__logo">TourRate</h1>
+        <nav class="header__nav">
+          <ul class="nav__list">
+            <li><a href="index.html">환율 정보</a></li>
+            <li><a href="recommend.html" class="active">여행 경로 추천</a></li>
+            <li><a href="review.html">리뷰 게시판</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero__inner">
+        <ul class="hero__tabs">
+          <li class="tab tab--active">항공편</li>
+          <li class="tab">호텔</li>
+          <li class="tab">렌터카</li>
+        </ul>
+
+        <h2 class="hero__title">
+          수백만 개의 경로 중, 지금의 예산에 맞는 여행을.
+        </h2>
+
+        <form id="travelForm" class="searchbar">
+          <div class="searchbar__item">
+            <label for="travelStart">여행 기간</label>
+            <div style="display: flex; gap: 8px">
+              <input type="date" id="travelStart" name="start" required />
+              <input type="date" id="travelEnd" name="end" required />
+            </div>
+          </div>
+
+          <div class="searchbar__item">
+            <label for="travelPeople">인원</label>
+            <input
+              type="number"
+              id="travelPeople"
+              name="people"
+              min="1"
+              placeholder="2"
+              required
+            />
+          </div>
+
+          <div class="searchbar__item">
+            <label for="travelBudget">경비 (₩)</label>
+            <input
+              type="text"
+              id="travelBudget"
+              name="budget"
+              inputmode="numeric"
+              placeholder="1,000,000"
+              required
+            />
+          </div>
+
+          <button type="submit" id="searchRouteBtn" class="btn btn--primary">
+            검색하기
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <main class="content">
+      <section class="content__grid">
+        <div class="panel">
+          <h3 class="panel__title">AI 추천 결과</h3>
+
+          <div id="loadingIndicator" class="loading__spinner" hidden>
+            <div class="spinner"></div>
+            <span>AI가 여행 경로를 생성 중입니다...</span>
+          </div>
+
+          <div id="recommendResult" class="result"></div>
+        </div>
+
+        <div class="panel panel--map" hidden>
+          <div id="mapContainer" class="map"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>© 2025 TourRate Team. All rights reserved.</p>
+    </footer>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+
+    <script type="module" src="./js/recommend.js"></script>
+  </body>
+</html>
