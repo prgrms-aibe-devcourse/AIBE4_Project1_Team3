@@ -1,19 +1,21 @@
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
 
-require("dotenv").config();
+import router from "./routes/index.js";
+
+dotenv.config();
 
 const app = express();
-const port = 3000;
-
-module.exports = app;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-const routes = require("./routes");
-app.use("/api", routes);
+app.use("/api", router);
 
 app.listen(port, () => {
   console.log(`서버가 ${port}번 포트로 실행 중입니다.`);
 });
+
+export default app;

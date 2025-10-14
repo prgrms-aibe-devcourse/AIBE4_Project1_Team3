@@ -1,6 +1,8 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from "dotenv";
+dotenv.config();
 
-const API_KEY = process.env.GOOGLE_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
@@ -60,7 +62,7 @@ function analyzeRateTrend(currentRate, historicalRates) {
   return `${trendPercentage.toFixed(2)}% (${trendDirection})`;
 }
 
-async function recommend({ startDate, endDate, budget, people }) {
+export async function recommend({ startDate, endDate, budget, people }) {
   const start = new Date(startDate);
   const end = new Date(endDate);
   // 두 날짜 간의 차이(밀리초)를 일수로 변환 (시작일과 종료일 모두 포함)
@@ -159,6 +161,54 @@ async function recommend({ startDate, endDate, budget, people }) {
   }
 }
 
-module.exports = {
-  recommend,
-};
+// 환률 api
+const EXCHANGE_API_KEY = process.env.EXCHANGE_API_KEY;
+const EXCHANGE_API_URL = process.env.EXCHANGE_API_URL;
+
+export async function fetchExchangeRate(searchDate) {
+  const url = `${EXCHANGE_API_URL}?authkey=${EXCHANGE_API_KEY}&searchdate=${searchDate}&data=AP01`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.length === 0 || data.errCd) {
+      console.warn(
+        `[${searchDate}] 데이터 없음:`,
+        data.errMsg || "데이터가 비어있습니다."
+      );
+      return null;
+    }
+    return data;
+  } catch (error) {
+    console.error(`API 호출 중 오류 발생 (${searchDate}):`, error);
+    return null;
+  }
+}
+
+// 날짜 포멧팅 함수
+
+export function formatDateToYYYYMMDD(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+// 30일 단위로 휴일제외한 날짜
+
+export function subtractBusinessDays(startDate, daysToSubtract) {
+  const businessDays = [];
+  const date = new Date(startDate.getTime());
+  let businessDaysCount = daysToSubtract;
+
+  while (businessDaysCount > 0) {
+    const dayOfWeek = date.getDay(); // 0: 일, 6: 토
+    const isBusinessDay = dayOfWeek !== 0 && dayOfWeek !== 6;
+
+    if (isBusinessDay) {
+      businessDays.push(formatDateToYYYYMMDD(date));
+      businessDaysCount--;
+      date.setMonth(date.getMonth() - 1);
+    } else date.setDate(date.getDate() - 1);
+  }
+  return businessDays;
+}
