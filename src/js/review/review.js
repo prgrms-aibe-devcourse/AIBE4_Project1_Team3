@@ -3,10 +3,13 @@ const apiServerUrl = "http://localhost:3000";
 
 let page = 1;
 let totalPages = 1;
+let sortType = "latest";
 
 // 게시글 로드
 async function loadPosts() {
-  const res = await fetch(`${apiServerUrl}/api/review?page=${page}`);
+  const res = await fetch(
+    `${apiServerUrl}/api/review?page=${page}&sortType=${sortType}`
+  );
   const result = await res.json();
 
   const container = document.getElementById("postsBody");
@@ -32,6 +35,13 @@ async function loadPosts() {
 function goDetail(id) {
   //window.location.href = `http://localhost:3000/review/detail?id=${id}`;
 }
+
+// 게시글 정렬
+document.getElementById("sortSelect").onchange = () => {
+  sortType = document.getElementById("sortSelect").value;
+  page = 1;
+  loadPosts();
+};
 
 // 이전
 document.getElementById("prev").onclick = () => {

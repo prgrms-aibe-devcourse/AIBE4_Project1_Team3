@@ -25,15 +25,31 @@ app.get("/review", (req, res) => {
 
 // 리뷰 데이터 가져옴
 app.get("/api/review", async (req, res) => {
+  const sortType = req.query.sortType;
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = 8;
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
+  // 정렬 기준 설정
+  let column = "created_at";
+  let ascending = false; // 기본: 최신순 (내림차순)
+
+  if (sortType === "oldest") {
+    column = "created_at";
+    ascending = true;
+  } else if (sortType === "highRate") {
+    column = "rate";
+    ascending = false;
+  } else if (sortType === "lowRate") {
+    column = "rate";
+    ascending = true;
+  }
+
   const { data, count, error } = await supabase
     .from("review")
     .select("id, title, rate, created_at", { count: "exact" })
-    .order("created_at", { ascending: false })
+    .order(column, { ascending })
     .range(from, to);
 
   if (error) return res.status(500).json({ error: error.message });
