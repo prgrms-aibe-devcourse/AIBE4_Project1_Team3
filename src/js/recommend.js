@@ -413,7 +413,7 @@ class AppController {
       setTimeout(() => this.map.map.invalidateSize(), 0); //지도 깨짐 방지
       this.reviewBtn.hidden = false;
 
-      reviewBtn.addEventListener("click", () => {
+      this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
         window.location.href = "http://localhost:3000/review/create";
       });

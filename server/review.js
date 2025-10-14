@@ -40,10 +40,10 @@ app.get("/api/review", async (req, res) => {
     column = "created_at";
     ascending = true;
   } else if (sortType === "highRate") {
-    column = "rate";
+    column = "rating";
     ascending = false;
   } else if (sortType === "lowRate") {
-    column = "rate";
+    column = "rating";
     ascending = true;
   }
 
@@ -87,4 +87,8 @@ app.post("/api/review/create", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+app.get("review/detail", (req, res) => {
+  res.sendFile(path.join(__dirname, "../src/review-detail.html"));
 });
