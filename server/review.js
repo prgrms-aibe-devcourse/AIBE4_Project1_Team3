@@ -89,6 +89,12 @@ app.post("/api/review/create", async (req, res) => {
   }
 });
 
-app.get("review/detail", (req, res) => {
+app.get("/review/detail", (req, res) => {
+  const id = req.query.id;
+  console.log(id);
   res.sendFile(path.join(__dirname, "../src/review-detail.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
