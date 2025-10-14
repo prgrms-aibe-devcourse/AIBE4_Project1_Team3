@@ -185,7 +185,7 @@ async function renderGraph() {
           {
             label: `${code} 환율`,
             data: rateData,
-            borderColor: "#6366F1",
+            borderColor: "#123553",
             backgroundColor: gradient,
             borderWidth: 2,
             fill: true,
