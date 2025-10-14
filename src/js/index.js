@@ -128,7 +128,7 @@ async function renderGraph() {
     }</span>
               </h3>
               <span
-                class="${trendColorClass} bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full"
+                class="${trendColorClass} text-xs font-semibold px-2.5 py-1 rounded-full"
                 >${rateChange > 0 ? "+" : ""}${trendText}</span
               >
             </div>
