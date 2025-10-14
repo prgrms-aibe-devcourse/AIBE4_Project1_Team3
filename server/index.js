@@ -52,12 +52,12 @@ const COST_CONFIG = {
     5: [0.3, 0.25, 0.2, 0.15, 0.1],
   },
   SPECIAL_PLACES: {
-    "유니버설": 120000,
-    "성": 8000,
-    "타워": 8000,
-    "시장": 7000,
-    "거리": 7000,
-  }
+    유니버설: 120000,
+    성: 8000,
+    타워: 8000,
+    시장: 7000,
+    거리: 7000,
+  },
 };
 
 function adjustCostByPlace(baseCost, placeName) {
@@ -74,9 +74,14 @@ function adjustCostByPlace(baseCost, placeName) {
 }
 
 function clampCost(cost) {
-  return Math.round(
-    Math.min(COST_CONFIG.MAX_PER_STOP, Math.max(COST_CONFIG.MIN_PER_STOP, cost)) / 100
-  ) * 100;
+  return (
+    Math.round(
+      Math.min(
+        COST_CONFIG.MAX_PER_STOP,
+        Math.max(COST_CONFIG.MIN_PER_STOP, cost)
+      ) / 100
+    ) * 100
+  );
 }
 
 function normalizeDayCosts(dayPlan, dayBudget) {
@@ -200,7 +205,10 @@ app.post("/ai/itinerary", async (req, res) => {
         contents: prompt,
       });
     } catch (firstError) {
-      console.log("gemini-2.0-flash-001 실패, fallback 시도:", firstError.message);
+      console.log(
+        "gemini-2.0-flash-001 실패, fallback 시도:",
+        firstError.message
+      );
       try {
         response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
@@ -210,7 +218,7 @@ app.post("/ai/itinerary", async (req, res) => {
         console.error("모든 Gemini 모델 실패:", secondError);
         return res.status(502).json({
           error: "AI 서비스 연결 실패",
-          details: secondError.message
+          details: secondError.message,
         });
       }
     }
@@ -219,25 +227,33 @@ app.post("/ai/itinerary", async (req, res) => {
     let text;
     try {
       // @google/genai의 GenerateContentResponse 구조 확인
-      if (typeof response?.text === 'function') {
+      if (typeof response?.text === "function") {
         text = response.text();
       } else if (response?.candidates?.[0]?.content?.parts?.[0]?.text) {
         // 실제 응답 구조
         text = response.candidates[0].content.parts[0].text;
       } else {
-        console.error("예상치 못한 응답 구조:", JSON.stringify(response, null, 2));
-        return res.status(502).json({ error: "AI 응답 구조가 예상과 다릅니다." });
+        console.error(
+          "예상치 못한 응답 구조:",
+          JSON.stringify(response, null, 2)
+        );
+        return res
+          .status(502)
+          .json({ error: "AI 응답 구조가 예상과 다릅니다." });
       }
     } catch (textError) {
       console.error("text() 호출 오류:", textError);
-      return res.status(502).json({ error: "AI 응답 파싱 실패", details: textError.message });
+      return res
+        .status(502)
+        .json({ error: "AI 응답 파싱 실패", details: textError.message });
     }
 
     if (!text) {
       return res.status(502).json({ error: "AI 응답이 비어 있습니다." });
     }
 
-    console.log("AI 응답 텍스트 (처음 200자):", text.substring(0, 200));
+    console.log("AI 응답 텍스트:", text);
+    // console.log("AI 응답 텍스트 (처음 200자):", text.substring(0, 200));
 
     const json = parseJSON(text);
     if (!json || !Array.isArray(json.dayPlans)) {
