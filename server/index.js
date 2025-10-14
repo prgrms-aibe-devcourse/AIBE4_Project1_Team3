@@ -145,6 +145,98 @@ function ensureReasons(itinerary) {
   return itinerary;
 }
 
+// 환율 API
+const EXCHANGE_API_KEY = process.env.EXCHANGE_API_KEY;
+const EXCHANGE_API_URL = process.env.EXCHANGE_API_URL;
+
+async function fetchExchangeRate(searchDate) {
+  const url = `${EXCHANGE_API_URL}?authkey=${EXCHANGE_API_KEY}&searchdate=${searchDate}&data=AP01`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.length === 0 || data.errCd) {
+      console.warn(
+        `[${searchDate}] 데이터 없음:`,
+        data.errMsg || "데이터가 비어있습니다."
+      );
+      return null;
+    }
+    return data;
+  } catch (error) {
+    console.error(`API 호출 중 오류 발생 (${searchDate}):`, error);
+    return null;
+  }
+}
+
+function formatDateToYYYYMMDD(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+function subtractBusinessDays(startDate, daysToSubtract) {
+  const businessDays = [];
+  const date = new Date(startDate.getTime());
+  let businessDaysCount = daysToSubtract;
+
+  while (businessDaysCount > 0) {
+    const dayOfWeek = date.getDay();
+    const isBusinessDay = dayOfWeek !== 0 && dayOfWeek !== 6;
+
+    if (isBusinessDay) {
+      businessDays.push(formatDateToYYYYMMDD(date));
+      businessDaysCount--;
+      date.setMonth(date.getMonth() - 1);
+    } else date.setDate(date.getDate() - 1);
+  }
+  return businessDays;
+}
+
+app.get("/api/exchange", async (req, res) => {
+  try {
+    const currencyData = {};
+    const labels = [];
+
+    const today = new Date();
+    let day = subtractBusinessDays(today, 6);
+    day.sort();
+    for (let i = 0; i < day.length; i++) {
+      const searchDate = day[i];
+      const data = await fetchExchangeRate(searchDate);
+      labels.push(day[i].slice(4, 6) + "월");
+
+      if (data) {
+        data.forEach((item) => {
+          let code = "";
+          if (item.cur_unit == "JPY(100)") code = "JPY100";
+          else code = item.cur_unit;
+
+          const rate = parseFloat(item.deal_bas_r.replace(/,/g, ""));
+
+          if (!currencyData[code]) {
+            currencyData[code] = [];
+          }
+          currencyData[code].push(rate);
+        });
+      } else {
+        Object.keys(currencyData).forEach((code) => {
+          currencyData[code].push(null);
+        });
+      }
+    }
+    res.json({
+      labels: labels,
+      data: currencyData,
+    });
+  } catch (error) {
+    console.error("서버 처리 오류:", error);
+    res
+      .status(500)
+      .json({ error: "데이터를 가져오는 중 서버 오류가 발생했습니다." });
+  }
+});
+
 app.post("/ai/itinerary", async (req, res) => {
   const { city, startDate, endDate, people, budget } = req.body;
   const s = new Date(startDate);
