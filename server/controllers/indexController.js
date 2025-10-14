@@ -20,7 +20,7 @@ router.post("/recommend", async (req, res) => {
 
     res.send(resultText);
   } catch (error) {
-    console.error("API 호출 erorr:", error);
+    console.error("API 호출 error:", error);
     res.status(500).json({ error: "API 호출 중 오류가 발생했습니다." });
   }
 });
