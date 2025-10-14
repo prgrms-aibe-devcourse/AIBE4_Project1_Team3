@@ -36,7 +36,6 @@ router.get("/exchange", async (req, res) => {
     for (let i = 0; i < day.length; i++) {
       const searchDate = day[i];
       const data = await indexService.fetchExchangeRate(searchDate);
-      const data = await indexService.fetchExchangeRate(searchDate);
       labels.push(day[i].slice(4, 6) + "월");
 
       if (data) {
