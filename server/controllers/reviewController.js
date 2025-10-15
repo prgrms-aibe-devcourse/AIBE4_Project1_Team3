@@ -1,31 +1,20 @@
-import express from "express";
+import { Router } from "express";
 import dotenv from "dotenv";
-import path from "path";
 import { fileURLToPath } from "url";
+import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
-const app = express();
-const PORT = 3000;
+dotenv.config();
 
+const router = Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-app.use(express.static(path.resolve(__dirname, "../src")));
-app.use(express.json());
-
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
-
-import { createClient } from "@supabase/supabase-js";
 
 const { SUPABASE_KEY: supabaseKey, SUPABASE_URL: supabaseUrl } = process.env;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 리뷰 게시판 페이지
-app.get("/review", (req, res) => {
-  res.sendFile(path.join(__dirname, "../src/review.html"));
-});
-
-// 리뷰 데이터 가져옴
-app.get("/api/review", async (req, res) => {
+// GET /api/review/receive - 리뷰 데이터들을 가져옴
+router.get("/receive", async (req, res) => {
   const sortType = req.query.sortType;
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = 8;
@@ -63,13 +52,8 @@ app.get("/api/review", async (req, res) => {
   });
 });
 
-// 여행 경로 리뷰 작성 페이지
-app.get("/review/create", (req, res) => {
-  res.sendFile(path.join(__dirname, "../src/review-form.html"));
-});
-
-// 경로 공유 내용 저장함
-app.post("/api/review/create", async (req, res) => {
+// POST /api/review/create - 경로 공유 내용 저장함
+router.post("/create", async (req, res) => {
   try {
     const reviewData = req.body; // 이미 JSON 형태로 들어옴
 
@@ -89,13 +73,8 @@ app.post("/api/review/create", async (req, res) => {
   }
 });
 
-// 리뷰 상세 페이지
-app.get("/review/detail", (req, res) => {
-  res.sendFile(path.join(__dirname, "../src/review-detail.html"));
-});
-
-// 리뷰 상세 데이터 가져오기
-app.get("/api/review/:id", async (req, res) => {
+// GET /api/review/receive/:id - 리뷰 상세 데이터 가져오기
+router.get("/receive/:id", async (req, res) => {
   const { id } = req.params;
 
   const { data, error } = await supabase
@@ -109,17 +88,22 @@ app.get("/api/review/:id", async (req, res) => {
   res.json(data);
 });
 
-// 리뷰 상세 데이터 삭제
-app.delete("/api/review/:id", async (req, res) => {
-  const id = req.params;
+// DELETE /api/review/delete/:id - 리뷰 데이터 삭제
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
 
-  const { data, error } = await supabase.from("review").delete().eq("id", id);
+    const { data, error } = await supabase.from("review").delete().eq("id", id);
 
-  if (error) return res.status(500).json({ error: error.message });
+    if (error) throw error;
 
-  res.json(data);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+export default router;

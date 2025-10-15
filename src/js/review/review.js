@@ -8,7 +8,7 @@ let sortType = "latest";
 // 게시글 로드
 async function loadPosts() {
   const res = await fetch(
-    `${apiServerUrl}/api/review?page=${page}&sortType=${sortType}`
+    `${apiServerUrl}/api/review/receive?page=${page}&sortType=${sortType}`
   );
   const result = await res.json();
 
@@ -37,7 +37,7 @@ async function loadPosts() {
 
 // 게시글 클릭 시 상세페이지로 이동
 function goDetail(id) {
-  window.location.href = `http://localhost:3000/review/detail?id=${id}`;
+  window.location.href = `/src/review-detail.html?id=${id}`;
 }
 
 // 게시글 정렬
