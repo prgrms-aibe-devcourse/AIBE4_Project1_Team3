@@ -68,7 +68,7 @@ app.get("/review/create", (req, res) => {
   res.sendFile(path.join(__dirname, "../src/review-form.html"));
 });
 
-// 경로 공유 내용 저장하기
+// 경로 공유 내용 저장함
 app.post("/api/review/create", async (req, res) => {
   try {
     const reviewData = req.body; // 이미 JSON 형태로 들어옴
@@ -89,10 +89,35 @@ app.post("/api/review/create", async (req, res) => {
   }
 });
 
+// 리뷰 상세 페이지
 app.get("/review/detail", (req, res) => {
-  const id = req.query.id;
-  console.log(id);
   res.sendFile(path.join(__dirname, "../src/review-detail.html"));
+});
+
+// 리뷰 상세 데이터 가져오기
+app.get("/api/review/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const { data, error } = await supabase
+    .from("review")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json(data);
+});
+
+// 리뷰 상세 데이터 삭제
+app.delete("/api/review/:id", async (req, res) => {
+  const id = req.params;
+
+  const { data, error } = await supabase.from("review").delete().eq("id", id);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json(data);
 });
 
 app.listen(PORT, () => {
