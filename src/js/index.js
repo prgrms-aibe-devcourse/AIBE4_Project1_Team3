@@ -17,7 +17,7 @@ window.handleFormSubmit = async function (event) {
 
   const resultsDiv = document.getElementById("results-container");
 
-  document.getElementById("recommend-grid").classList.add("hidden");
+  document.getElementById("recommendation-grid").classList.add("hidden");
 
   let loadingP = document.getElementById("loading-message");
   if (!loadingP) {
@@ -62,7 +62,7 @@ function displayResults(recommendations) {
   const loadingP = document.getElementById("loading-message");
   if (loadingP) loadingP.classList.add("hidden");
 
-  const recommendationGrid = document.getElementById("recommend-grid");
+  const recommendationGrid = document.getElementById("recommendation-grid");
   recommendationGrid.classList.remove("hidden");
 
   recommendations.forEach((rec, index) => {
@@ -114,7 +114,7 @@ async function renderGraph() {
   const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
   console.log(apiData);
-  const containerGraph = document.querySelector("#recommendation-grid");
+  const containerGraph = document.querySelector("#chart-grid");
   Object.keys(currencyMap).forEach((code) => {
     const countryInfo = currencyMap[code];
     const rateData = currencyData[code];
