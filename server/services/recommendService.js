@@ -174,6 +174,133 @@ export function sortStopsByTime(stops) {
   return sorted;
 }
 
+// ===== 날씨 관련 상수 및 함수 =====
+
+export const WEATHER_CONSTANTS = {
+  REAL_TIME_THRESHOLD_DAYS: 5, // 실시간 예보를 사용할 날짜 범위 (Max 5일 이내)
+  MS_PER_DAY: 1000 * 60 * 60 * 24, // 밀리초 단위 하루
+  DEFAULT_TEMP_HIGH: 20,
+  DEFAULT_TEMP_LOW: 10,
+  DEFAULT_PRECIPITATION: 50,
+  DEFAULT_RAINY_DAYS: 5,
+};
+
+/**
+ * 날씨 코드를 기반으로 계절/팁 정보를 생성합니다.
+ */
+export function getWeatherSeasonAndTip(mainWeather, tempHigh) {
+  const TEMP_HOT_THRESHOLD = 25;
+
+  const weatherInfo = {
+    Rain: {
+      season: "우천",
+      tip: "비가 올 예정입니다. 우산과 방수 옷을 준비하세요.",
+    },
+    Clear: {
+      season: "맑음",
+      tip:
+        tempHigh > TEMP_HOT_THRESHOLD
+          ? "맑고 더운 날씨입니다. 자외선 차단제를 챙기세요."
+          : "맑고 쾌적한 날씨입니다. 여행하기 좋습니다!",
+    },
+    Clouds: {
+      season: "흐림",
+      tip: "구름 많은 날씨입니다. 가벼운 외투를 준비하세요.",
+    },
+    Snow: {
+      season: "눈",
+      tip: "눈이 올 예정입니다. 따뜻한 옷과 미끄럼 방지 신발을 준비하세요.",
+    },
+  };
+
+  return (
+    weatherInfo[mainWeather] || {
+      season: mainWeather,
+      tip: "날씨 변화에 대비하세요.",
+    }
+  );
+}
+
+/**
+ * 날짜 차이를 계산합니다 (일 단위).
+ */
+export function calculateDaysDifference(date1, date2) {
+  return Math.ceil((date1 - date2) / WEATHER_CONSTANTS.MS_PER_DAY);
+}
+
+/**
+ * OpenWeatherMap API로부터 실시간 날씨 예보를 가져옵니다.
+ */
+export async function fetchRealTimeWeather(lat, lon, city, startDate) {
+  if (!isFinite(lat) || !isFinite(lon)) {
+    console.warn(`[fetchRealTimeWeather] 유효하지 않은 좌표: lat=${lat}, lon=${lon}`);
+    return null;
+  }
+
+  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+  const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=kr`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`OpenWeatherMap API 오류: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // 여행 시작일의 예보 필터링
+    const targetDate = new Date(startDate).toISOString().split("T")[0];
+    const forecasts = data.list.filter((item) => {
+      const forecastDate = item.dt_txt.split(" ")[0];
+      return forecastDate === targetDate;
+    });
+
+    if (forecasts.length === 0) {
+      console.warn(`[fetchRealTimeWeather] 예보 없음: ${city}, ${targetDate}`);
+      return null;
+    }
+
+    // 최고/최저 온도 계산
+    const temps = forecasts.map((f) => f.main.temp);
+    const tempHigh = Math.round(Math.max(...temps));
+    const tempLow = Math.round(Math.min(...temps));
+
+    // 가장 빈번한 날씨 상태 추출
+    const weatherCounts = {};
+    forecasts.forEach((f) => {
+      const weather = f.weather[0].main;
+      weatherCounts[weather] = (weatherCounts[weather] || 0) + 1;
+    });
+    const mainWeather = Object.keys(weatherCounts).reduce((a, b) =>
+      weatherCounts[a] > weatherCounts[b] ? a : b
+    );
+
+    // 강수 확률 평균 계산
+    const avgPop = Math.round(
+      (forecasts.reduce((sum, f) => sum + (f.pop || 0), 0) / forecasts.length) *
+        100
+    );
+
+    // 날씨별 팁과 계절 정보 생성
+    const { season, tip } = getWeatherSeasonAndTip(mainWeather, tempHigh);
+
+    return {
+      city,
+      tempHigh,
+      tempLow,
+      precipitation: avgPop,
+      rainyDays: avgPop > 50 ? 1 : 0,
+      season,
+      tip,
+      isAverage: false,
+      isRealTime: true,
+    };
+  } catch (err) {
+    console.error("[fetchRealTimeWeather] API 호출 실패:", err.message);
+    return null;
+  }
+}
+
 export function ensureReasons(itinerary) {
   itinerary.dayPlans = (itinerary.dayPlans || []).map((d) => {
     const stops = (d.stops || []).map((s) => {

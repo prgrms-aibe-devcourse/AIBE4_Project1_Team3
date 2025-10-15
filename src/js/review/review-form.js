@@ -124,13 +124,8 @@ class RecommendationRenderer {
             <strong>${escapeHtml(
               item.category || "기타"
             )}</strong>${basis}${conf}<br/>
-<<<<<<< HEAD
             단가: ${currencySymbol}${unit.toLocaleString()} × ${qty} = ${currencySymbol}${subJPY.toLocaleString()}<br/>
-            원화: ${formatCurrency(subKRW)}
-=======
-            단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
             원화: ${subKRW === 0 ? "무료" : formatCurrency(subKRW)}
->>>>>>> dev
           </li>`;
         })
         .join("");

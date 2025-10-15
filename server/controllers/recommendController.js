@@ -6,6 +6,7 @@ dotenv.config();
 import {
   parseJSON,
   ensureReasons,
+  fetchRealTimeWeather,
 } from "../services/recommendService.js";
 
 const router = Router();
@@ -124,7 +125,10 @@ router.post("/ai/itinerary", async (req, res) => {
 
   // 도시 기반으로 통화 및 환율 자동 감지
   const currencyInfo = getCurrencyInfo(city);
-  const { currency, currencyCode, symbol, rate: fx } = currencyInfo; 
+  const { currency, currencyCode, symbol, rate: fx } = currencyInfo;
+
+  // 여행 월 계산 (평균 날씨 정보 제공용)
+  const travelMonth = s.getMonth() + 1; // 1-12
 
   const prompt = `
       너는 전문 여행 플래너이자 관광 심리 분석가다.
@@ -168,6 +172,9 @@ router.post("/ai/itinerary", async (req, res) => {
       11) 출력 형식: **유효한 JSON만 반환**(설명/마크다운/코드블록 금지). 모든 합계는 정수이며 정확히 일치.
       12) **중요**: dayPlans 배열에는 정확히 ${days}개의 day 객체가 포함되어야 한다. (day: 1부터 day: ${days}까지)
       13) **식사 검증 필수**: 각 day마다 category가 "breakfast", "lunch", "dinner"인 stop이 각각 최소 1개씩 있어야 한다.
+      14) "${city}" 도시의 ${travelMonth}월 평균 날씨 정보도 함께 제공하라.
+         - 과거 30년 평균 기후 데이터를 기반으로 작성
+         - 최고/최저 기온(°C), 강수량(mm), 강수일(일), 계절감, 여행 팁 포함
 
       카테고리/타임슬롯(권장):
       - category: "airport" | "transfer" | "breakfast" | "lunch" | "snack" | "cafe" | "dinner" | "sightseeing" | "shopping" | "activity" | "nightlife"
@@ -235,7 +242,16 @@ router.post("/ai/itinerary", async (req, res) => {
             "dayTotal": 0
           }
         ],
-        "overallTotal": 0
+        "overallTotal": 0,
+        "averageWeather": {
+          "month": ${travelMonth},
+          "tempHigh": 22,
+          "tempLow": 16,
+          "precipitation": 110,
+          "rainyDays": 9,
+          "season": "가을",
+          "tip": "가을 여행 최적기! 긴팔과 얇은 재킷을 준비하세요."
+        }
       }
 
       Stop 스키마(예시, 모든 필드 필수):
@@ -262,6 +278,7 @@ router.post("/ai/itinerary", async (req, res) => {
       - must-visit ≥ 3, 프리미엄 식사 ≥ 2
       - 좌표 실존/정확
       - 모든 항목이 최소 비용 기준(일반 식사 8,000원, 저녁 15,000원, 프리미엄 30,000원, 관광 10,000원, 쇼핑 20,000원)을 충족하는지 확인
+      - averageWeather 필드가 month, tempHigh, tempLow, precipitation, rainyDays, season, tip을 포함하는지 확인
       `.trim();
 
   try {
@@ -331,6 +348,64 @@ router.post("/ai/itinerary", async (req, res) => {
   } catch (err) {
     console.error("/ai/itinerary 오류:", err);
     res.status(500).json({ error: "서버 내부 오류", details: err.message });
+  }
+});
+
+// 날씨 정보 API 라우트
+router.get("/weather", async (req, res) => {
+  const { lat, lng, city, startDate } = req.query;
+
+  // 필수 파라미터 검증
+  if (!lat || !lng || !city || !startDate) {
+    return res.status(400).json({
+      error: "필수 파라미터가 누락되었습니다: lat, lng, city, startDate",
+    });
+  }
+
+  try {
+    const travelDate = new Date(startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    travelDate.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((travelDate - today) / (1000 * 60 * 60 * 24));
+
+    // 5일 이내만 실시간 날씨 제공
+    if (diffDays < 0) {
+      return res.status(400).json({
+        error: "과거 날짜는 실시간 예보를 제공할 수 없습니다.",
+        diffDays,
+      });
+    }
+
+    if (diffDays > 5) {
+      console.log(`[실시간 날씨 범위 초과] ${city} - ${diffDays}일 후`);
+      return res.status(400).json({
+        error: "실시간 예보는 5일 이내만 가능합니다. AI 응답의 평균 날씨를 사용하세요.",
+        diffDays,
+      });
+    }
+
+    // 실시간 날씨 API 호출
+    const weatherData = await fetchRealTimeWeather(
+      parseFloat(lat),
+      parseFloat(lng),
+      city,
+      startDate
+    );
+
+    if (!weatherData) {
+      throw new Error("날씨 데이터를 가져올 수 없습니다.");
+    }
+
+    console.log(`[실시간 날씨 제공] ${city} - ${diffDays}일 후`);
+    res.json(weatherData);
+  } catch (err) {
+    console.error("[날씨 API] 오류:", err.message);
+    res.status(500).json({
+      error: "날씨 정보를 가져오는 데 실패했습니다.",
+      details: err.message,
+    });
   }
 });
 
