@@ -18,7 +18,7 @@ router.get("/review", (req, res) => {
 });
 
 // 리뷰 데이터 가져옴
-router.get("/api/review", async (req, res) => {
+router.get("/receive", async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = 8;
   const from = (page - 1) * limit;
