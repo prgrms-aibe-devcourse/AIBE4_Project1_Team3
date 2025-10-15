@@ -17,8 +17,6 @@ window.handleFormSubmit = async function (event) {
 
   const resultsDiv = document.getElementById("results-container");
 
-  document.getElementById("recommendation-grid").classList.add("hidden");
-
   let loadingP = document.getElementById("loading-message");
   if (!loadingP) {
     loadingP = document.createElement("p");
