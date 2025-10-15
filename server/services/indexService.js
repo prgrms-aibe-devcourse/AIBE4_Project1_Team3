@@ -24,17 +24,6 @@ const currencyUnitMap = {
   USD: 1, // 미국 달러 — 1단위
 };
 
-// const exchangeRatesData = {
-//   JPY: {
-//     current: 900.5, // 100엔 당 원화
-//     historical: [920.1, 915.6, 910.0, 905.4, 902.3, 898.9], // 6개월 전부터 1개월 전까지, 매월 1일 환율
-//   },
-//   USD: {
-//     current: 1350.8,
-//     historical: [1320.0, 1325.5, 1330.1, 1340.0, 1345.2, 1348.0],
-//   },
-// };
-
 function analyzeRateTrend(currentRate, historicalRates) {
   if (!historicalRates || historicalRates.length === 0) {
     return "N/A";
