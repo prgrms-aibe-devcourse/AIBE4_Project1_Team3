@@ -43,7 +43,7 @@ router.get("/exchange", async (req, res) => {
     const today = new Date();
 
     // import한 subtractBusinessDays 함수를 사용합니다.
-    const days = subtractBusinessDays(today, 6); // 오늘 시점 기준 6개월 전 영업일들
+    const days = subtractBusinessDays(today, 7); // 오늘 시점 기준 6개월 전 영업일들
 
     // Promise.all을 사용해 병렬로 API를 호출하여 성능을 개선합니다.
     const exchangeDataPromises = days.map((date) => fetchExchangeRate(date));
