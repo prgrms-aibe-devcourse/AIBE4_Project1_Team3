@@ -1,15 +1,21 @@
+let exchangeRatesData;
+
+document.addEventListener("DOMContentLoaded", async () => {
+  exchangeRatesData = await renderGraph();
+  console.log(exchangeRatesData);
+});
+
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
+  const apiBaseUrl = "http://localhost:3000";
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
-  const budget = form.elements.budget.value;
+  const budget = form.elements.budget.value.replace(/,/g, "");
   const people = form.elements.people.value;
 
   const resultsDiv = document.getElementById("results-container");
-
-  document.getElementById("recommendation-grid").classList.add("hidden");
 
   let loadingP = document.getElementById("loading-message");
   if (!loadingP) {
@@ -22,12 +28,18 @@ window.handleFormSubmit = async function (event) {
   loadingP.classList.remove("hidden");
 
   try {
-    const response = await fetch("http://localhost:3000/api/recommend", {
+    const response = await fetch(`${apiBaseUrl}/api/recommend`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ startDate, endDate, budget, people }),
+      body: JSON.stringify({
+        startDate,
+        endDate,
+        budget,
+        people,
+        exchangeRatesData,
+      }),
     });
 
     if (!response.ok) {
@@ -35,12 +47,7 @@ window.handleFormSubmit = async function (event) {
       throw new Error(errorData.error || "서버에서 오류가 발생했습니다.");
     }
 
-    const text = await response.text();
-    const jsonText = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    const data = JSON.parse(jsonText);
+    const data = await response.json();
 
     displayResults(data.recommendations);
   } catch (error) {
@@ -56,14 +63,49 @@ function displayResults(recommendations) {
   const recommendationGrid = document.getElementById("recommendation-grid");
   recommendationGrid.classList.remove("hidden");
 
+  const form = document.querySelector('form');
+  const startDate = form.elements.start_date.value;
+  const endDate = form.elements.end_date.value;
+  const budget = form.elements.budget.value.replace(/,/g, "");
+  const people = form.elements.people.value;
+
   recommendations.forEach((rec, index) => {
     const rank = index + 1;
     document.getElementById(`country-${rank}`).innerText = rec.country;
     document.getElementById(`current-rate-${rank}`).innerText =
-      rec.current_rate;
-    document.getElementById(`future_rate-${rank}`).innerText = rec.future_rate;
+      rec.current_rate.toLocaleString("ko-KR");
+    document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
+      rec.forecasted_exchange_rate.toLocaleString("ko-KR");
+    document.getElementById(`reason-${rank}`).innerText = rec.reason;
+    document.getElementById(`per_cost-${rank}`).innerText =
+      rec.per_cost.toLocaleString("ko-KR") + "원";
+  });
+
+  // 추천 루트 보기 버튼에 클릭 이벤트 추가
+  const cards = document.querySelectorAll('#recommendation-grid > div');
+  cards.forEach((card, index) => {
+    const button = card.querySelector('button');
+    if (button && recommendations[index]) {
+      button.onclick = () => {
+        const params = new URLSearchParams({
+          city: recommendations[index].country,
+          startDate: startDate,
+          endDate: endDate,
+          people: people,
+          budget: budget
+        });
+        window.location.href = `recommend.html?${params.toString()}`;
+      };
+    }
   });
 }
+
+window.formatBudget = function (input) {
+  let value = input.value.replace(/[^\d]/g, "");
+  if (value) {
+    input.value = parseInt(value, 10).toLocaleString("ko-KR");
+  }
+};
 
 function getFormattedDate(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -78,7 +120,6 @@ initializeForm();
 
 // chart
 
-document.addEventListener("DOMContentLoaded", renderGraph);
 const currencyMap = {
   USD: { name: "미국", unit: "달러" },
   EUR: { name: "유럽", unit: "유로" },
@@ -89,12 +130,13 @@ const currencyMap = {
 };
 
 async function renderGraph() {
+  const exchangeRatesData = {};
   const response = await fetch("http://localhost:3000/api/exchange");
   const apiData = await response.json();
   const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
   console.log(apiData);
-  const containerGraph = document.querySelector("#recommendation-grid");
+  const containerGraph = document.querySelector("#chart-grid");
   Object.keys(currencyMap).forEach((code) => {
     const countryInfo = currencyMap[code];
     const rateData = currencyData[code];
@@ -103,6 +145,13 @@ async function renderGraph() {
     const initialRate = rateData[0];
     const rateChange = ((currentRate - initialRate) / initialRate) * 100;
     const trendText = rateChange.toFixed(2) + "%";
+
+    exchangeRatesData[code] = {
+      current: currentRate,
+      historical: rateData
+        .slice(0, rateData.length - 1)
+        .map((value) => (value === null || value === undefined ? 0 : value)),
+    };
 
     let trendColorClass;
     if (rateChange < 0) {
@@ -185,7 +234,7 @@ async function renderGraph() {
           {
             label: `${code} 환율`,
             data: rateData,
-            borderColor: "#6366F1",
+            borderColor: "#123553",
             backgroundColor: gradient,
             borderWidth: 2,
             fill: true,
@@ -218,4 +267,5 @@ async function renderGraph() {
       },
     });
   });
+  return exchangeRatesData;
 }
