@@ -9,9 +9,10 @@ const router = Router();
 
 // POST /api/recommend - AI 여행지 추천 API
 router.post("/recommend", async (req, res) => {
-  const { startDate, endDate, budget, people } = req.body;
+  const { startDate, endDate, budget, people, exchangeRatesData } = req.body;
 
-  if (!startDate || !endDate || !budget || !people) {
+  if (!startDate || !endDate || !budget || !people || !exchangeRatesData) {
+    console.log("exchangeRatesData:", exchangeRatesData);
     return res.status(400).json({ error: "모든 필드를 입력해주세요." });
   }
 
@@ -22,6 +23,7 @@ router.post("/recommend", async (req, res) => {
       endDate,
       budget,
       people,
+      exchangeRatesData,
     });
     res.json(result);
   } catch (error) {
@@ -79,50 +81,6 @@ router.get("/exchange", async (req, res) => {
     });
   } catch (error) {
     console.error("API /exchange 서버 처리 오류:", error);
-    res
-      .status(500)
-      .json({ error: "데이터를 가져오는 중 서버 오류가 발생했습니다." });
-  }
-});
-
-router.get("/api/exchange", async (req, res) => {
-  try {
-    const currencyData = {};
-    const labels = [];
-
-    const today = new Date();
-    let day = subtractBusinessDays(today, 6);
-    day.sort();
-    for (let i = 0; i < day.length; i++) {
-      const searchDate = day[i];
-      const data = await fetchExchangeRate(searchDate);
-      labels.push(day[i].slice(4, 6) + "월");
-
-      if (data) {
-        data.forEach((item) => {
-          let code = "";
-          if (item.cur_unit == "JPY(100)") code = "JPY100";
-          else code = item.cur_unit;
-
-          const rate = parseFloat(item.deal_bas_r.replace(/,/g, ""));
-
-          if (!currencyData[code]) {
-            currencyData[code] = [];
-          }
-          currencyData[code].push(rate);
-        });
-      } else {
-        Object.keys(currencyData).forEach((code) => {
-          currencyData[code].push(null);
-        });
-      }
-    }
-    res.json({
-      labels: labels,
-      data: currencyData,
-    });
-  } catch (error) {
-    console.error("서버 처리 오류:", error);
     res
       .status(500)
       .json({ error: "데이터를 가져오는 중 서버 오류가 발생했습니다." });
