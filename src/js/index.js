@@ -1,6 +1,7 @@
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
+  const apiBaseUrl = "http://localhost:3000";
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
@@ -22,7 +23,7 @@ window.handleFormSubmit = async function (event) {
   loadingP.classList.remove("hidden");
 
   try {
-    const response = await fetch("http://localhost:3000/api/recommend", {
+    const response = await fetch(`${apiBaseUrl}/api/recommend`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -56,8 +57,8 @@ function displayResults(recommendations) {
     document.getElementById(`country-${rank}`).innerText = rec.country;
     document.getElementById(`current-rate-${rank}`).innerText =
       rec.current_rate.toLocaleString("ko-KR");
-    document.getElementById(`forcasted_exchange_rate-${rank}`).innerText =
-      rec.forcasted_exchange_rate.toLocaleString("ko-KR");
+    document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
+      rec.forecasted_exchange_rate.toLocaleString("ko-KR");
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
     document.getElementById(`per_cost-${rank}`).innerText =
       rec.per_cost.toLocaleString("ko-KR") + "원";

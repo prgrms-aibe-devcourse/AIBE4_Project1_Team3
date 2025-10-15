@@ -134,9 +134,9 @@ export async function recommend({ startDate, endDate, budget, people }) {
       답변은 반드시 아래와 같은 JSON 형식으로만 제공해주세요. 다른 설명은 붙이지 마세요.
       {
         "recommendations": [
-          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
-          {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
-          {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forcasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"}
+          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forecasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
+          {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forecasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
+          {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forecasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"}
         ]
       }
     `;
