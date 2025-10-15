@@ -4,7 +4,7 @@ dotenv.config();
 
 const API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 const candidateCountries = [
   { name: "중국", currency: "CNH" },
@@ -33,7 +33,7 @@ function analyzeRateTrend(currentRate, historicalRates) {
   const sum = historicalRates.reduce((acc, rate) => acc + rate, 0);
   const average = sum / historicalRates.length;
 
-  // 2. 평균 대비 현재 환율의 변동률 계산
+  // 2. 평균 대비 현재 환율의 변동률 계산(변화율 공식)
   const trendPercentage = ((currentRate - average) / average) * 100;
 
   // 3. 추세 판단 (원화 기준)
@@ -66,19 +66,20 @@ export async function recommend({
     const unit = currencyUnitMap[country.currency] || 1;
     const trend = analyzeRateTrend(rates.current, rates.historical);
 
-    const currentExchangeRateDisplay = `${rates.current.toFixed(
-      2
-    )} KRW / ${unit} ${country.currency}`;
+    const currentExchangeRateDisplay = `${unit} ${
+      country.currency
+    } / ${rates.current.toFixed(2)} KRW`;
 
     return {
-      name: country.name,
-      currency: country.currency,
-      current_exchange_rate: currentExchangeRateDisplay,
-      exchange_rate_trend_6m_avg: trend,
+      name: country.name, // 나라 이름
+      currency: country.currency, // 나라 코드
+      current_exchange_rate: currentExchangeRateDisplay, // 현재 환율
+      exchange_rate_trend_6m_avg: trend, // 환율 추세
     };
   });
 
   const contextDataString = JSON.stringify(contextDataForPrompt, null, 2);
+  console.log("data", contextDataString);
 
   const prompt = `
       # 역할
@@ -102,19 +103,19 @@ export async function recommend({
 
       # 추가 과업: 여행 경비 추정
       주어진 환율 데이터 외에, 당신의 지식 기반을 활용하여 아래 항목을 추정해주세요.
-      1.  **1인당 평균 왕복 항공권 비용**: ${startDate} ~ ${endDate} 기간의 일반적인 비용을 추정하세요.
-      2.  **1박당 평균 숙소 비용**: 해당 국가의 에어비앤비 수준의 비용을 추정하세요.
-      3.  **1인당 일일 예상 경비**: 식비, 교통비, 관광비 등을 포함하여 약 100,000원을 기준으로 하되, 각 국가의 물가를 고려하여 적절히 조정하세요.
+      1. **1인당 평균 왕복 항공권 비용**: ${startDate} ~ ${endDate} 기간의 일반적인 비용을 추정하세요.
+      2. **1박당 평균 숙소 비용**: 해당 국가의 에어비앤비 수준의 비용을 추정하세요.
+      3. **1인당 일일 예상 경비**: 식비, 교통비, 관광비 등을 포함하여 약 100,000원을 기준으로 하되, 각 국가의 물가를 고려하여 적절히 조정하세요.
 
       # 수행 규칙 및 논리
-      1.  'exchange_rate_trend_6m_avg' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
-      2.  과거 6개월의 환율 데이터를 이용해, 단순 선형 추세를 기반으로 다음 달 예상 환율을 추정하여 'forcasted_exchange_rate' 항목에 반영하세요.
-      3.  위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비('per_cost')**를 계산하세요.
+      1. 'exchange_rate_trend_6m_avg' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
+      2. 과거 6개월의 환율 데이터를 이용해, 단순 선형 추세를 기반으로 다음 달 예상 환율을 추정하여 'forcasted_exchange_rate' 항목에 반영하세요.
+      3. 위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비('per_cost')**를 계산하세요.
           -   **계산식: (추정 항공권 비용) + (추정 1박 숙소 비용 * ${durationDays}-1) + (조정된 일일 경비 * ${durationDays})**
-      4.  계산된 'per_cost'가 사용자의 1인당 예산(${
+      4. 계산된 'per_cost'가 사용자의 1인당 예산(${
         budget / people
       }원) 내에 들어오는지 확인하여 '예산 효율성'을 평가하세요.
-      5.  최종적으로 '예상 환율(유리함)', '예산 효율성'을 종합하여 가장 합리적인 상위 3개국을 추천하세요
+      5. 최종적으로 '예상 환율(유리함)', '예산 효율성'을 종합하여 가장 합리적인 상위 3개국을 추천하세요
 
       # 출력 형식
       답변은 반드시 아래와 같은 JSON 형식으로만 제공해주세요. 다른 설명은 붙이지 마세요.

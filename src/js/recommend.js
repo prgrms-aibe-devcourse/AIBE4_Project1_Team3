@@ -133,6 +133,7 @@ class MapRenderer {
     this.map = null;
     this.layer = null;
   }
+  
   init(center, zoom = 12) {
     if (this.map) {
       this.map.remove();
@@ -147,6 +148,7 @@ class MapRenderer {
     }).addTo(this.map);
     this.layer = L.layerGroup().addTo(this.map);
   }
+
   renderDayPlans(dayPlans) {
     if (!this.map || !this.layer) return;
     this.layer.clearLayers();
