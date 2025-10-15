@@ -17,6 +17,101 @@ console.log(
   process.env.GEMINI_API_KEY ? "Loaded" : "Not found"
 );
 
+// 도시 기반 통화 및 환율 감지 함수
+function getCurrencyInfo(city) {
+  const cityLower = city.toLowerCase();
+
+  // 일본
+  if (cityLower.includes('도쿄') || cityLower.includes('오사카') || cityLower.includes('교토') ||
+      cityLower.includes('후쿠오카') || cityLower.includes('삿포로') || cityLower.includes('나고야') ||
+      cityLower.includes('tokyo') || cityLower.includes('osaka') || cityLower.includes('kyoto') ||
+      cityLower.includes('fukuoka') || cityLower.includes('sapporo') || cityLower.includes('nagoya')) {
+    return { currency: '엔', currencyCode: 'JPY', symbol: '¥', rate: 9.5 };
+  }
+
+  // 미국
+  if (cityLower.includes('뉴욕') || cityLower.includes('로스앤젤레스') || cityLower.includes('샌프란시스코') ||
+      cityLower.includes('시애틀') || cityLower.includes('시카고') || cityLower.includes('라스베가스') ||
+      cityLower.includes('new york') || cityLower.includes('los angeles') || cityLower.includes('san francisco') ||
+      cityLower.includes('seattle') || cityLower.includes('chicago') || cityLower.includes('las vegas') ||
+      cityLower.includes('la ') || cityLower.includes('nyc') || cityLower.includes('sf')) {
+    return { currency: '달러', currencyCode: 'USD', symbol: '$', rate: 1400 };
+  }
+
+  // 유럽 (유로존)
+  if (cityLower.includes('파리') || cityLower.includes('베를린') || cityLower.includes('로마') ||
+      cityLower.includes('바르셀로나') || cityLower.includes('암스테르담') || cityLower.includes('빈') ||
+      cityLower.includes('paris') || cityLower.includes('berlin') || cityLower.includes('rome') ||
+      cityLower.includes('barcelona') || cityLower.includes('amsterdam') || cityLower.includes('vienna') ||
+      cityLower.includes('프랑크푸르트') || cityLower.includes('밀라노') || cityLower.includes('마드리드')) {
+    return { currency: '유로', currencyCode: 'EUR', symbol: '€', rate: 1500 };
+  }
+
+  // 영국
+  if (cityLower.includes('런던') || cityLower.includes('london') || cityLower.includes('맨체스터') ||
+      cityLower.includes('manchester') || cityLower.includes('에든버러') || cityLower.includes('edinburgh')) {
+    return { currency: '파운드', currencyCode: 'GBP', symbol: '£', rate: 1800 };
+  }
+
+  // 중국
+  if (cityLower.includes('베이징') || cityLower.includes('상하이') || cityLower.includes('광저우') ||
+      cityLower.includes('선전') || cityLower.includes('beijing') || cityLower.includes('shanghai') ||
+      cityLower.includes('guangzhou') || cityLower.includes('shenzhen') || cityLower.includes('청두') ||
+      cityLower.includes('항저우')) {
+    return { currency: '위안', currencyCode: 'CNY', symbol: '¥', rate: 190 };
+  }
+
+  // 태국
+  if (cityLower.includes('방콕') || cityLower.includes('bangkok') || cityLower.includes('푸켓') ||
+      cityLower.includes('phuket') || cityLower.includes('치앙마이') || cityLower.includes('chiang mai')) {
+    return { currency: '바트', currencyCode: 'THB', symbol: '฿', rate: 40 };
+  }
+
+  // 베트남
+  if (cityLower.includes('하노이') || cityLower.includes('호치민') || cityLower.includes('다낭') ||
+      cityLower.includes('hanoi') || cityLower.includes('ho chi minh') || cityLower.includes('danang') ||
+      cityLower.includes('호이안')) {
+    return { currency: '동', currencyCode: 'VND', symbol: '₫', rate: 0.055 };
+  }
+
+  // 싱가포르
+  if (cityLower.includes('싱가포르') || cityLower.includes('singapore')) {
+    return { currency: '싱가포르 달러', currencyCode: 'SGD', symbol: 'S$', rate: 1050 };
+  }
+
+  // 홍콩
+  if (cityLower.includes('홍콩') || cityLower.includes('hong kong') || cityLower.includes('hk')) {
+    return { currency: '홍콩 달러', currencyCode: 'HKD', symbol: 'HK$', rate: 180 };
+  }
+
+  // 대만
+  if (cityLower.includes('타이베이') || cityLower.includes('taipei') || cityLower.includes('타이중') ||
+      cityLower.includes('가오슝') || cityLower.includes('kaohsiung')) {
+    return { currency: '대만 달러', currencyCode: 'TWD', symbol: 'NT$', rate: 45 };
+  }
+
+  // 호주
+  if (cityLower.includes('시드니') || cityLower.includes('멜버른') || cityLower.includes('브리즈번') ||
+      cityLower.includes('sydney') || cityLower.includes('melbourne') || cityLower.includes('brisbane')) {
+    return { currency: '호주 달러', currencyCode: 'AUD', symbol: 'A$', rate: 950 };
+  }
+
+  // 캐나다
+  if (cityLower.includes('토론토') || cityLower.includes('밴쿠버') || cityLower.includes('몬트리올') ||
+      cityLower.includes('toronto') || cityLower.includes('vancouver') || cityLower.includes('montreal')) {
+    return { currency: '캐나다 달러', currencyCode: 'CAD', symbol: 'C$', rate: 1050 };
+  }
+
+  // 한국 (기본값 처리용)
+  if (cityLower.includes('서울') || cityLower.includes('부산') || cityLower.includes('제주') ||
+      cityLower.includes('seoul') || cityLower.includes('busan') || cityLower.includes('jeju')) {
+    return { currency: '원', currencyCode: 'KRW', symbol: '₩', rate: 1 };
+  }
+
+  // 기본값: 달러 (알 수 없는 도시의 경우)
+  return { currency: '달러', currencyCode: 'USD', symbol: '$', rate: 1400 };
+}
+
 router.post("/ai/itinerary", async (req, res) => {
   const { city, startDate, endDate, people, budget } = req.body;
   const s = new Date(startDate);
@@ -26,13 +121,16 @@ router.post("/ai/itinerary", async (req, res) => {
   const budgetNum = Number(String(budget).replace(/[^\d]/g, "")) || 0;
   const peopleNum = parseInt(people, 10) || 1;
   const budgetPerPerson = Math.round(budgetNum / peopleNum);
-  const fx = 9.5; 
+
+  // 도시 기반으로 통화 및 환율 자동 감지
+  const currencyInfo = getCurrencyInfo(city);
+  const { currency, currencyCode, symbol, rate: fx } = currencyInfo; 
 
   const prompt = `
       너는 전문 여행 플래너이자 관광 심리 분석가다.
       사용자에게 "${city}" 도시의 ${days}일 여행 일정을 추천해야 한다.
       이번 계획은 "1인 기준 예산"으로 작성하며, 총 예산(1인)은 약 ${budgetPerPerson}원이다.
-      환율은 1엔=${fx}원(고정)으로 계산한다.
+      현지 통화는 ${currency}(${currencyCode}, 기호: ${symbol})이며, 환율은 1${currency}=${fx}원(고정)으로 계산한다.
       호텔 조식은 뺀다.
 
       규칙(핵심):
@@ -62,8 +160,8 @@ router.post("/ai/itinerary", async (req, res) => {
       8) 예산 분배(1인 기준):
         - 전체 합계(overallTotal) ∈ [${Math.round(budgetPerPerson * 0.95)}, ${Math.round(budgetPerPerson * 1.05)}] (반드시 95~100% 소진, 절대 90% 미만 금지)
         - 일평균 목표: ${Math.round(budgetPerPerson / days)}원 ±10%
-        - 비용 산정은 JPY 단가 → KRW 환산(정수 반올림). 예: Y = round(X엔 × ${fx})원
-        - costReason 형식(1인 기준): "단가(엔) × 수량 = X엔 → 1엔=${fx}원 → Y원(1인)"
+        - 비용 산정은 ${currencyCode} 단가 → KRW 환산(정수 반올림). 예: Y = round(X${currency} × ${fx})원
+        - costReason 형식(1인 기준): "단가(${currency}) × 수량 = X${currency} → 1${currency}=${fx}원 → Y원(1인)"
         - **중요**: 위의 최소 비용 기준을 반드시 준수하고, 각 항목의 실제 비용은 최소 기준의 1.5~2배 수준으로 설정하여 예산을 충분히 활용한다.
       9) 좌표 신뢰성: 바다/무효 좌표 금지, 실존 장소 좌표만.
       10) 중복 금지: 동일 장소 반복 금지(지점이 다르면 허용 가능).
@@ -108,7 +206,10 @@ router.post("/ai/itinerary", async (req, res) => {
       출력 스키마(JSON만):
       {
         "city": "${city}",
-        "fxKRWPerJPY": ${fx},
+        "currency": "${currency}",
+        "currencyCode": "${currencyCode}",
+        "currencySymbol": "${symbol}",
+        "exchangeRate": ${fx},
         "budgetModel": "per_person",
         "days": ${days},
         "meta": {
@@ -142,7 +243,7 @@ router.post("/ai/itinerary", async (req, res) => {
         "placeName": "정확 한국어 표기",
         "summary": "50자 이내 요약",
         "reason": "100~150자: 왜 가는지(맛/리뷰/접근성/대표성/가성비)",
-        "costReason": "단가(엔) × 수량 = X엔 → 1엔=${fx}원 → Y원(1인)",
+        "costReason": "단가(${currency}) × 수량 = X${currency} → 1${currency}=${fx}원 → Y원(1인)",
         "estimatedCost": 50000,
         "lat": 35.0000,
         "lng": 135.0000,

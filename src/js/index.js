@@ -63,6 +63,12 @@ function displayResults(recommendations) {
   const recommendationGrid = document.getElementById("recommendation-grid");
   recommendationGrid.classList.remove("hidden");
 
+  const form = document.querySelector('form');
+  const startDate = form.elements.start_date.value;
+  const endDate = form.elements.end_date.value;
+  const budget = form.elements.budget.value.replace(/,/g, "");
+  const people = form.elements.people.value;
+
   recommendations.forEach((rec, index) => {
     const rank = index + 1;
     document.getElementById(`country-${rank}`).innerText = rec.country;
@@ -73,6 +79,24 @@ function displayResults(recommendations) {
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
     document.getElementById(`per_cost-${rank}`).innerText =
       rec.per_cost.toLocaleString("ko-KR") + "원";
+  });
+
+  // 추천 루트 보기 버튼에 클릭 이벤트 추가
+  const cards = document.querySelectorAll('#recommendation-grid > div');
+  cards.forEach((card, index) => {
+    const button = card.querySelector('button');
+    if (button && recommendations[index]) {
+      button.onclick = () => {
+        const params = new URLSearchParams({
+          city: recommendations[index].country,
+          startDate: startDate,
+          endDate: endDate,
+          people: people,
+          budget: budget
+        });
+        window.location.href = `recommend.html?${params.toString()}`;
+      };
+    }
   });
 }
 
