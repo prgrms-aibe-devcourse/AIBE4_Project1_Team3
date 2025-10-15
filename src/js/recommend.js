@@ -1,6 +1,7 @@
 import { getAiRecommendation } from "./api/ai.js";
 import { showLoading, hideLoading } from "./components/loading.js";
 import { formatCurrency, stripDigits, formatDate } from "./utils/format.js";
+import { sanitizePlan } from "./utils/sanitizePlan.js";
 
 // XSS 방어를 위한 HTML 이스케이프 함수
 function escapeHtml(text) {
@@ -34,39 +35,88 @@ class GeoUtils {
 }
 
 class ItineraryPlanner {
-  static optimizeDay(stops, { maxStops = 5, maxTravelKm = 25 } = {}) {
-    const pts = stops.filter((s) => isFinite(s.lat) && isFinite(s.lng));
-    if (pts.length <= 1) return pts;
-    const ordered = [pts[0]];
-    const remaining = pts.slice(1);
-    while (remaining.length) {
-      const last = ordered[ordered.length - 1];
-      let idx = 0,
-        best = Infinity;
-      for (let i = 0; i < remaining.length; i++) {
-        const d = GeoUtils.haversine(
-          [last.lat, last.lng],
-          [remaining[i].lat, remaining[i].lng]
-        );
-        if (d < best) {
-          best = d;
-          idx = i;
-        }
-      }
-      ordered.push(remaining.splice(idx, 1)[0]);
-      if (ordered.length >= maxStops) break;
+  // 시간대별 우선순위 (실제 시간 흐름 순서)
+  static TIME_SLOT_ORDER = {
+    morning: 1,        // 07:00~09:00 (아침 식사, 공항 도착)
+    late_morning: 2,   // 09:00~12:00 (오전 관광)
+    afternoon: 3,      // 12:00~14:00 (점심 식사)
+    tea: 4,            // 14:00~17:00 (오후 활동, 카페)
+    evening: 5,        // 17:00~20:00 (저녁 식사)
+    night: 6,          // 20:00~23:00 (야간 활동)
+  };
+
+  // category를 기반으로 기본 timeSlot 추론
+  static inferTimeSlot(category) {
+    const categoryToTimeSlot = {
+      // 식사 (반드시 시간대 고정)
+      breakfast: "morning",        // 아침 = morning
+      lunch: "afternoon",          // 점심 = afternoon
+      dinner: "evening",           // 저녁 = evening
+
+      // 간식/카페
+      snack: "tea",                // 간식 = tea (오후)
+      cafe: "tea",                 // 카페 = tea (오후)
+
+      // 교통/이동
+      airport: "morning",          // 공항 = morning (첫날) 또는 late_morning (마지막날)
+      transfer: "late_morning",    // 이동 = late_morning
+
+      // 활동
+      sightseeing: "late_morning", // 관광 = 오전 (기본값)
+      shopping: "tea",             // 쇼핑 = 오후 (기본값)
+      activity: "tea",             // 액티비티 = 오후 (기본값)
+      nightlife: "night",          // 야간활동 = night
+    };
+    return categoryToTimeSlot[category] || "late_morning";
+  }
+
+  // stops를 시간 순서대로 정렬
+  static sortByTimeSlot(stops) {
+    if (!Array.isArray(stops) || stops.length === 0) {
+      return stops;
     }
+
+    return [...stops].sort((a, b) => {
+      const timeSlotA = a.timeSlot || ItineraryPlanner.inferTimeSlot(a.category);
+      const timeSlotB = b.timeSlot || ItineraryPlanner.inferTimeSlot(b.category);
+
+      const orderA = ItineraryPlanner.TIME_SLOT_ORDER[timeSlotA] || 99;
+      const orderB = ItineraryPlanner.TIME_SLOT_ORDER[timeSlotB] || 99;
+
+      return orderA - orderB;
+    });
+  }
+
+  static optimizeDay(stops, { maxStops = 15, maxTravelKm = 75 } = {}) {
+    // 1. 먼저 시간순으로 정렬 (가장 중요!)
+    const timeSorted = ItineraryPlanner.sortByTimeSlot(stops);
+    const pts = timeSorted.filter((s) => isFinite(s.lat) && isFinite(s.lng));
+
+    if (pts.length <= 1) return pts;
+
+    // 2. 시간순 정렬을 유지하면서 최대 개수만 제한
+    // (동선 최적화는 시간 순서를 깨뜨릴 수 있으므로 적용하지 않음)
+    const limited = pts.slice(0, maxStops);
+
+    // 3. 거리 제한 체크 (시간순 유지하면서)
     let total = 0;
-    const pruned = [ordered[0]];
-    for (let i = 1; i < ordered.length; i++) {
+    const pruned = [limited[0]];
+
+    for (let i = 1; i < limited.length; i++) {
       const d = GeoUtils.haversine(
         [pruned[pruned.length - 1].lat, pruned[pruned.length - 1].lng],
-        [ordered[i].lat, ordered[i].lng]
+        [limited[i].lat, limited[i].lng]
       );
-      if (total + d > maxTravelKm) break;
-      total += d;
-      pruned.push(ordered[i]);
+
+      // 거리 제한을 초과하더라도 식사는 반드시 포함
+      const isMeal = ["breakfast", "lunch", "dinner"].includes(limited[i].category);
+
+      if (total + d <= maxTravelKm || isMeal) {
+        total += d;
+        pruned.push(limited[i]);
+      }
     }
+
     return pruned;
   }
   static optimizeAll(dayPlans) {
@@ -169,12 +219,8 @@ class RecommendationRenderer {
   }
 
   static calculateStopCost(stop) {
-    if (!Array.isArray(stop.costBreakdown))
-      return Number(stop.estimatedCost) || 0;
-    return stop.costBreakdown.reduce(
-      (acc, it) => acc + (Number(it.subtotalKRW) || 0),
-      0
-    );
+    // 백엔드에서 정규화된 estimatedCost를 항상 사용
+    return Number(stop.estimatedCost) || 0;
   }
 
   static renderCostBreakdown(stop) {
@@ -196,7 +242,7 @@ class RecommendationRenderer {
               item.category || "기타"
             )}</strong>${basis}${conf}<br/>
             단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
-            원화: ${formatCurrency(subKRW)}
+            원화: ${subKRW === 0 ? "무료" : formatCurrency(subKRW)}
           </li>`;
         })
         .join("");
@@ -221,15 +267,46 @@ class RecommendationRenderer {
     return "";
   }
 
+  static getMealIcon(category) {
+    const mealIcons = {
+      breakfast: "🍳",
+      lunch: "🍴",
+      dinner: "🍽️",
+      snack: "🍰",
+      cafe: "☕"
+    };
+    return mealIcons[category] || "";
+  }
+
+  static getMealLabel(category) {
+    const mealLabels = {
+      breakfast: "아침",
+      lunch: "점심",
+      dinner: "저녁",
+      snack: "간식",
+      cafe: "카페"
+    };
+    return mealLabels[category] || "";
+  }
+
   static renderStop(stop, index) {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
     const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+    const category = stop.category || "";
+    const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(category);
+    const mealIcon = isMeal ? RecommendationRenderer.getMealIcon(category) : "";
+    const mealLabel = isMeal ? RecommendationRenderer.getMealLabel(category) : "";
+    const mealClass = isMeal ? "meal-stop" : "";
 
     return `
-      <li class="stops-row">
+      <li class="stops-row ${mealClass}" data-category="${escapeHtml(category)}">
         <span class="idx">${index + 1}</span>
         <div class="place">
-          <div class="name">${escapeHtml(stop.placeName)}</div>
+          <div class="name">
+            ${mealIcon ? `<span class="meal-icon">${mealIcon}</span>` : ""}
+            ${mealLabel ? `<span class="meal-label">${mealLabel}</span>` : ""}
+            ${escapeHtml(stop.placeName)}
+          </div>
           <div class="sub">${escapeHtml(stop.summary || "")}</div>
           ${
             stop.stopReason
@@ -238,7 +315,7 @@ class RecommendationRenderer {
           }
           ${cbHTML}
         </div>
-        <span class="cost">${formatCurrency(stopSum)}</span>
+        <span class="cost">${stopSum === 0 ? "무료" : formatCurrency(stopSum)}</span>
       </li>`;
   }
 
@@ -279,15 +356,10 @@ class RecommendationRenderer {
   }
 
   calculateDaySums(days) {
-    return days.map((dp) => {
-      return (
-        Number(dp.dayTotalKRW) ||
-        (dp.stops || []).reduce(
-          (a, s) => a + RecommendationRenderer.calculateStopCost(s),
-          0
-        )
-      );
-    });
+    // 실제 화면에 표시되는 stops의 합계를 기준으로 계산
+    return days.map((dp) =>
+      (dp.stops || []).reduce((sum, s) => sum + (Number(s.estimatedCost) || 0), 0)
+    );
   }
 
   attachCardToggleEvents(dayPlans, map) {
@@ -403,8 +475,13 @@ class AppController {
         throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
       }
 
+      const fx = 9.5; 
+      sanitizePlan(itinerary, fx);
+
       const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
       const finalItin = { city: itinerary.city || city, dayPlans: optimized };
+
+      sanitizePlan(finalItin, fx);
 
       this.map.init([34.6937, 135.5023], 11);
       this.cards.render(finalItin, this.map);
