@@ -103,6 +103,77 @@ export function normalizeCosts(itinerary, totalBudget, days) {
   return itinerary;
 }
 
+// 시간대별 우선순위 정의 (실제 시간 흐름 순서)
+const TIME_SLOT_ORDER = {
+  morning: 1,        // 07:00~09:00 (아침 식사, 공항 도착)
+  late_morning: 2,   // 09:00~12:00 (오전 관광)
+  afternoon: 3,      // 12:00~14:00 (점심 식사)
+  tea: 4,            // 14:00~17:00 (오후 활동, 카페)
+  evening: 5,        // 17:00~20:00 (저녁 식사)
+  night: 6,          // 20:00~23:00 (야간 활동)
+};
+
+// category를 기반으로 기본 timeSlot 추론
+function inferTimeSlot(category) {
+  const categoryToTimeSlot = {
+    // 식사 (반드시 시간대 고정)
+    breakfast: "morning",        // 아침 = morning
+    lunch: "afternoon",          // 점심 = afternoon
+    dinner: "evening",           // 저녁 = evening
+
+    // 간식/카페
+    snack: "tea",                // 간식 = tea (오후)
+    cafe: "tea",                 // 카페 = tea (오후)
+
+    // 교통/이동
+    airport: "morning",          // 공항 = morning (첫날) 또는 late_morning (마지막날)
+    transfer: "late_morning",    // 이동 = late_morning
+
+    // 활동
+    sightseeing: "late_morning", // 관광 = 오전 (기본값)
+    shopping: "tea",             // 쇼핑 = 오후 (기본값)
+    activity: "tea",             // 액티비티 = 오후 (기본값)
+    nightlife: "night",          // 야간활동 = night
+  };
+  return categoryToTimeSlot[category] || "late_morning";
+}
+
+// stops를 시간 순서대로 정렬
+export function sortStopsByTime(stops) {
+  if (!Array.isArray(stops) || stops.length === 0) {
+    return stops;
+  }
+
+  // 정렬 전 순서 로깅
+  const beforeOrder = stops.map(s => `${s.category}(${s.timeSlot || 'auto'})`).join(' → ');
+
+  const sorted = [...stops].sort((a, b) => {
+    // timeSlot이 없으면 category로부터 추론
+    const timeSlotA = a.timeSlot || inferTimeSlot(a.category);
+    const timeSlotB = b.timeSlot || inferTimeSlot(b.category);
+
+    const orderA = TIME_SLOT_ORDER[timeSlotA] || 99;
+    const orderB = TIME_SLOT_ORDER[timeSlotB] || 99;
+
+    return orderA - orderB;
+  });
+
+  // 정렬 후 순서 로깅
+  const afterOrder = sorted.map(s => {
+    const ts = s.timeSlot || inferTimeSlot(s.category);
+    return `${s.category}(${ts})`;
+  }).join(' → ');
+
+  // 순서가 바뀐 경우만 로그 출력
+  if (beforeOrder !== afterOrder) {
+    console.log('⏰ [시간순 정렬 적용됨]');
+    console.log('  Before:', beforeOrder);
+    console.log('  After: ', afterOrder);
+  }
+
+  return sorted;
+}
+
 export function ensureReasons(itinerary) {
   itinerary.dayPlans = (itinerary.dayPlans || []).map((d) => {
     const stops = (d.stops || []).map((s) => {
@@ -114,7 +185,9 @@ export function ensureReasons(itinerary) {
             }로, 인근 동선과 함께 방문하기 좋습니다.`;
       return { ...s, reason };
     });
-    return { ...d, stops };
+    // 시간순으로 정렬
+    const sortedStops = sortStopsByTime(stops);
+    return { ...d, stops: sortedStops };
   });
   return itinerary;
 }
