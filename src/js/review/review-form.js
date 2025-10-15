@@ -264,7 +264,7 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
 
   if (result.success) {
     alert("리뷰가 등록되었습니다!");
-    window.location.href = "http://localhost:3000/review";
+    window.location.href = "/src/review.html";
   } else {
     alert("등록 실패: " + result.error);
   }

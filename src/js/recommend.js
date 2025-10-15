@@ -415,7 +415,7 @@ class AppController {
 
       this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
-        window.location.href = "http://localhost:3000/review/create";
+        window.location.href = "/src/review-form.html";
       });
     } catch (err) {
       console.error("AI 추천 오류:", err);

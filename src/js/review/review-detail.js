@@ -234,7 +234,7 @@ class AppController {
     this.map.init([34.6937, 135.5023], 11);
 
     const url = "http://localhost:3000";
-    const res = await fetch(url + `/api/review/${reviewId}`);
+    const res = await fetch(url + `/api/review/receive/${reviewId}`);
     const data = await res.json();
 
     document.getElementById("title").textContent = data.title;
@@ -267,24 +267,27 @@ document.getElementById("deleteForm").addEventListener("submit", async (e) => {
   const pwdInput = formData.get("password");
 
   if (pwd === pwdInput) {
-    alert("비밀번호가 일치합니다");
+    // 서버에 전송
+    const response = await fetch(
+      `http://localhost:3000/api/review/delete/${reviewId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("삭제 성공:", data);
+      alert("리뷰가 삭제되었습니다.");
+      window.location.href = "/src/review.html";
+    } else {
+      console.error("삭제 실패:", data);
+    }
   } else {
     alert("비밀번호가 일치하지 않습니다");
   }
-
-  // const url = "http://localhost:3000";
-
-  // // 서버에 전송
-  // const res = await fetch(url + `/api/review/${reviewId}`, {
-  //   method: "DELETE",
-  // });
-
-  // const result = await res.json();
-
-  // if (result.success) {
-  //   alert("삭제되었습니다");
-  //   window.location.href = "http://localhost:3000/review";
-  // } else {
-  //   alert("등록 실패: " + result.error);
-  // }
 });
