@@ -17,7 +17,7 @@ window.handleFormSubmit = async function (event) {
 
   const resultsDiv = document.getElementById("results-container");
 
-  document.getElementById("recommendation-grid").classList.add("hidden");
+  document.getElementById("recommend-grid").classList.add("hidden");
 
   let loadingP = document.getElementById("loading-message");
   if (!loadingP) {
@@ -62,7 +62,7 @@ function displayResults(recommendations) {
   const loadingP = document.getElementById("loading-message");
   if (loadingP) loadingP.classList.add("hidden");
 
-  const recommendationGrid = document.getElementById("recommendation-grid");
+  const recommendationGrid = document.getElementById("recommend-grid");
   recommendationGrid.classList.remove("hidden");
 
   recommendations.forEach((rec, index) => {
@@ -212,7 +212,7 @@ async function renderGraph() {
           {
             label: `${code} 환율`,
             data: rateData,
-            borderColor: "#6366F1",
+            borderColor: "#123553",
             backgroundColor: gradient,
             borderWidth: 2,
             fill: true,

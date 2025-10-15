@@ -6,6 +6,11 @@
     <title>TourRate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,27 +20,64 @@
     <link rel="stylesheet" href="css/index.css" />
   </head>
   <body class="bg-slate-50">
+    <nav class="top-0 z-20 bg-white shadow-md">
+      <div
+        class="container mx-auto px-4 py-4 flex justify-between items-center"
+      >
+        <a href="index.html" class="text-2xl font-bold text-gray-900"
+          >TourRate</a
+        >
+
+        <div class="space-x-6 hidden md:flex">
+          <a
+            href="index.html"
+            class="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+            >환율 정보</a
+          >
+          <a
+            href="review.html"
+            class="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+            >리뷰 게시판</a
+          >
+        </div>
+      </div>
+    </nav>
     <header class="relative">
-      <div
-        class="h-[450px] bg-cover bg-center"
-        style="
-          background-image: url('https://images.unsplash.com/photo-1523531294919-427425db6e5a?q=80&w=2070&auto=format&fit=crop');
-        "
-      >
-        <div class="absolute inset-0 bg-black/40"></div>
+      <div class="swiper h-[450px]">
+        <div class="swiper-wrapper">
+          <div
+            class="swiper-slide bg-cover bg-center"
+            style="background-image: url('./image/new-york-1280.jpg')"
+          ></div>
+          <div
+            class="swiper-slide bg-cover bg-center"
+            style="background-image: url('./image/eu-1280.jpg')"
+          ></div>
+          <div
+            class="swiper-slide bg-cover bg-center"
+            style="background-image: url('./image/japan-1280.jpg')"
+          ></div>
+          <div
+            class="swiper-slide bg-cover bg-center"
+            style="background-image: url('./image/thailand-1280.jpg')"
+          ></div>
+          <div
+            class="swiper-slide bg-cover bg-center"
+            style="background-image: url('./image/uk-1280.jpg')"
+          ></div>
+          <div
+            class="swiper-slide bg-cover bg-center"
+            style="background-image: url('./image/china-1280.jpg')"
+          ></div>
+        </div>
+
+        <div class="swiper-pagination"></div>
       </div>
+      <div class="absolute inset-0 bg-black/40"></div>
 
       <div
-        class="absolute inset-0 flex flex-col items-center justify-center -mt-12 text-center"
-      >
-        <h1 class="text-4xl font-bold text-white">TourRate</h1>
-        <p class="mt-2 text-white/90">
-          환율 분석으로 적합한 여행지를 추천해 드립니다.
-        </p>
-      </div>
-
-      <div
-        class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-full max-w-4xl"
+        class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-full max-w-4xl z-10"
+        class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-full max-w-4xl z-10"
       >
         <form
           onsubmit="handleFormSubmit(event)"
@@ -151,7 +193,7 @@
           </p>
         </div>
         <div
-          id="recommendation-grid"
+          id="recommend-grid"
           class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           <div
@@ -528,6 +570,7 @@
     </main>
 
     <script type="module" src="js/index.js"></script>
+    <script src="js/components/swipe.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </body>
 </html>
