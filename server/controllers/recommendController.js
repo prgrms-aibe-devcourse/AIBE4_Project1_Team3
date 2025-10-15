@@ -75,12 +75,35 @@ router.post("/ai/itinerary", async (req, res) => {
       - category: "airport" | "transfer" | "breakfast" | "lunch" | "snack" | "cafe" | "dinner" | "sightseeing" | "shopping" | "activity" | "nightlife"
       - timeSlot: "morning" | "late_morning" | "afternoon" | "tea" | "evening" | "night"
 
-      **중요: 시간순 정렬 규칙**
-      모든 dayPlans의 stops 배열은 반드시 실제 시간 순서대로 정렬되어야 한다.
-      - 아침(breakfast, morning) → 오전 관광(sightseeing/shopping, late_morning) → 점심(lunch, afternoon) → 오후 활동(activity/shopping, tea/afternoon) → 저녁(dinner, evening) → 야간 활동(nightlife, night) 순으로 배치한다.
-      - 간식(snack) 또는 카페(cafe)는 오전과 오후 사이에 배치할 수 있다.
-      - stops 배열 내 순서가 이 시간대 순서와 일치하지 않으면 잘못된 출력으로 간주한다.
-      - 각 stop의 timeSlot은 category와 일치해야 한다: breakfast→morning, lunch→afternoon, dinner→evening
+      **[필수] 시간순 정렬 규칙 - 이 규칙을 어기면 응답 전체가 무효 처리됨**
+
+      모든 dayPlans의 stops 배열은 반드시 실제 여행 동선처럼 시간 순서대로 정렬되어야 한다.
+
+      **정확한 시간대 순서 (절대적 규칙):**
+      1. morning (아침) - 07:00~09:00
+         → category: "breakfast", "airport" (첫날만)
+      2. late_morning (오전) - 09:00~12:00
+         → category: "transfer", "sightseeing", "shopping"
+      3. afternoon (점심) - 12:00~14:00
+         → category: "lunch" (필수)
+      4. tea (오후 전반) - 14:00~17:00
+         → category: "activity", "shopping", "cafe", "snack"
+      5. evening (저녁) - 17:00~20:00
+         → category: "dinner" (필수), "sightseeing"
+      6. night (야간) - 20:00~23:00
+         → category: "nightlife", "shopping", "activity"
+
+      **잘못된 예시 (절대 금지):**
+       [dinner, breakfast, lunch] - 시간 역순
+       [sightseeing, dinner, lunch, shopping] - 점심이 저녁 뒤에
+       [lunch, breakfast, dinner] - 아침이 점심 뒤에
+
+      **올바른 예시:**
+       [breakfast, sightseeing, lunch, shopping, dinner, nightlife]
+       [airport, transfer, dinner, nightlife] (첫날)
+       [breakfast, shopping, lunch, cafe, dinner, shopping, nightlife]
+
+      **검증 필수:** 각 day의 stops를 순서대로 읽었을 때 timeSlot 값이 항상 증가하거나 같아야 함 (절대 감소하면 안됨)
 
       출력 스키마(JSON만):
       {
