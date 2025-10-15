@@ -1,6 +1,7 @@
 import { getAiRecommendation } from "./api/ai.js";
 import { showLoading, hideLoading } from "./components/loading.js";
 import { formatCurrency, stripDigits, formatDate } from "./utils/format.js";
+import { sanitizePlan } from "./utils/sanitizePlan.js";
 
 // XSS 방어를 위한 HTML 이스케이프 함수
 function escapeHtml(text) {
@@ -169,12 +170,8 @@ class RecommendationRenderer {
   }
 
   static calculateStopCost(stop) {
-    if (!Array.isArray(stop.costBreakdown))
-      return Number(stop.estimatedCost) || 0;
-    return stop.costBreakdown.reduce(
-      (acc, it) => acc + (Number(it.subtotalKRW) || 0),
-      0
-    );
+    // 백엔드에서 정규화된 estimatedCost를 항상 사용
+    return Number(stop.estimatedCost) || 0;
   }
 
   static renderCostBreakdown(stop) {
@@ -280,13 +277,9 @@ class RecommendationRenderer {
 
   calculateDaySums(days) {
     return days.map((dp) => {
-      return (
-        Number(dp.dayTotalKRW) ||
-        (dp.stops || []).reduce(
-          (a, s) => a + RecommendationRenderer.calculateStopCost(s),
-          0
-        )
-      );
+      // sanitizePlan에서 이미 dayTotal을 정확히 계산했으므로 반드시 이를 사용
+      // 다른 필드(dayTotalKRW 등)는 잘못된 값일 수 있으므로 무시
+      return Number(dp.dayTotal) || 0;
     });
   }
 
@@ -401,6 +394,11 @@ class AppController {
       if (!itinerary || !itinerary.dayPlans || !itinerary.dayPlans.length) {
         throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
       }
+
+      // AI 응답을 받은 직후 금액 데이터 정규화
+      // costReason에서 실제 금액을 파싱해서 estimatedCost를 보정
+      const fx = 9.5; // JPY → KRW 환율 (필요시 동적으로 가져올 수 있음)
+      sanitizePlan(itinerary, fx);
 
       const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
       const finalItin = { city: itinerary.city || city, dayPlans: optimized };
