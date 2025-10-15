@@ -46,7 +46,6 @@ router.get("/exchange", async (req, res) => {
     // Promise.all을 사용해 병렬로 API를 호출하여 성능을 개선합니다.
     const exchangeDataPromises = days.map((date) => fetchExchangeRate(date));
     const results = await Promise.all(exchangeDataPromises);
-
     results.forEach((data, index) => {
       const searchDate = days[index];
       labels.push(searchDate.slice(4, 6) + "월");
@@ -92,7 +91,6 @@ router.get("/api/exchange", async (req, res) => {
 
     const today = new Date();
     let day = subtractBusinessDays(today, 6);
-    day.sort();
     for (let i = 0; i < day.length; i++) {
       const searchDate = day[i];
       const data = await fetchExchangeRate(searchDate);
