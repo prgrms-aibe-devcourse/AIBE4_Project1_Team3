@@ -1,6 +1,6 @@
 import { getAiRecommendation } from "./api/ai.js";
 import { showLoading, hideLoading } from "./components/loading.js";
-import { formatCurrency, stripDigits, formatDate } from "./utils/format.js";
+import { formatCurrency, stripDigits, formatDate, getCurrencySymbol } from "./utils/format.js";
 import { sanitizePlan } from "./utils/sanitizePlan.js";
 
 // XSS 방어를 위한 HTML 이스케이프 함수
@@ -214,8 +214,9 @@ class MapRenderer {
 }
 
 class RecommendationRenderer {
-  constructor(container) {
+  constructor(container, city = "") {
     this.container = container;
+    this.city = city;
   }
 
   static calculateStopCost(stop) {
@@ -223,7 +224,9 @@ class RecommendationRenderer {
     return Number(stop.estimatedCost) || 0;
   }
 
-  static renderCostBreakdown(stop) {
+  renderCostBreakdown(stop, city) {
+    const currencySymbol = getCurrencySymbol(city);
+
     if (Array.isArray(stop.costBreakdown) && stop.costBreakdown.length) {
       const items = stop.costBreakdown
         .map((item) => {
@@ -241,7 +244,7 @@ class RecommendationRenderer {
             <strong>${escapeHtml(
               item.category || "기타"
             )}</strong>${basis}${conf}<br/>
-            단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
+            단가: ${currencySymbol}${unit.toLocaleString()} × ${qty} = ${currencySymbol}${subJPY.toLocaleString()}<br/>
             원화: ${subKRW === 0 ? "무료" : formatCurrency(subKRW)}
           </li>`;
         })
@@ -289,9 +292,9 @@ class RecommendationRenderer {
     return mealLabels[category] || "";
   }
 
-  static renderStop(stop, index) {
+  renderStop(stop, index, city) {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
-    const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+    const cbHTML = this.renderCostBreakdown(stop, city);
     const category = stop.category || "";
     const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(category);
     const mealIcon = isMeal ? RecommendationRenderer.getMealIcon(category) : "";
@@ -319,12 +322,12 @@ class RecommendationRenderer {
       </li>`;
   }
 
-  static renderDayCard(dayPlan, daySum, avgDaily) {
+  renderDayCard(dayPlan, daySum, avgDaily, city) {
     const pct = avgDaily
       ? Math.min(100, Math.round((daySum / avgDaily) * 100))
       : 0;
     const rows = (dayPlan.stops || [])
-      .map((s, i) => RecommendationRenderer.renderStop(s, i))
+      .map((s, i) => this.renderStop(s, i, city))
       .join("");
 
     return `
@@ -389,6 +392,12 @@ class RecommendationRenderer {
       return;
     }
 
+    // 도시 정보 업데이트
+    const city = itinerary.city || this.city;
+    if (itinerary.city) {
+      this.city = itinerary.city;
+    }
+
     const daySums = this.calculateDaySums(days);
     const avgDaily = daySums.length
       ? Math.round(daySums.reduce((a, b) => a + b, 0) / daySums.length)
@@ -396,7 +405,7 @@ class RecommendationRenderer {
 
     this.container.innerHTML = days
       .map((dp, idx) =>
-        RecommendationRenderer.renderDayCard(dp, daySums[idx] || 0, avgDaily)
+        this.renderDayCard(dp, daySums[idx] || 0, avgDaily, city)
       )
       .join("");
 

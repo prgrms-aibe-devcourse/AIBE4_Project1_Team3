@@ -1,4 +1,4 @@
-import { formatCurrency } from "../utils/format.js";
+import { formatCurrency, getCurrencySymbol } from "../utils/format.js";
 
 // XSS 방어를 위한 HTML 이스케이프 함수
 function escapeHtml(text) {
@@ -57,8 +57,9 @@ class MapRenderer {
 }
 
 class RecommendationRenderer {
-  constructor(container) {
+  constructor(container, city = "") {
     this.container = container;
+    this.city = city;
   }
 
   static calculateStopCost(stop) {
@@ -70,7 +71,9 @@ class RecommendationRenderer {
     );
   }
 
-  static renderCostBreakdown(stop) {
+  renderCostBreakdown(stop) {
+    const currencySymbol = getCurrencySymbol(this.city);
+
     if (Array.isArray(stop.costBreakdown) && stop.costBreakdown.length) {
       const items = stop.costBreakdown
         .map((item) => {
@@ -88,7 +91,7 @@ class RecommendationRenderer {
             <strong>${escapeHtml(
               item.category || "기타"
             )}</strong>${basis}${conf}<br/>
-            단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
+            단가: ${currencySymbol}${unit.toLocaleString()} × ${qty} = ${currencySymbol}${subJPY.toLocaleString()}<br/>
             원화: ${formatCurrency(subKRW)}
           </li>`;
         })
@@ -114,9 +117,9 @@ class RecommendationRenderer {
     return "";
   }
 
-  static renderStop(stop, index) {
+  renderStop(stop, index) {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
-    const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+    const cbHTML = this.renderCostBreakdown(stop);
 
     return `
       <li class="stops-row">
@@ -135,12 +138,12 @@ class RecommendationRenderer {
       </li>`;
   }
 
-  static renderDayCard(dayPlan, daySum, avgDaily) {
+  renderDayCard(dayPlan, daySum, avgDaily) {
     const pct = avgDaily
       ? Math.min(100, Math.round((daySum / avgDaily) * 100))
       : 0;
     const rows = (dayPlan.stops || [])
-      .map((s, i) => RecommendationRenderer.renderStop(s, i))
+      .map((s, i) => this.renderStop(s, i))
       .join("");
 
     return `
@@ -205,6 +208,11 @@ class RecommendationRenderer {
       return;
     }
 
+    // 도시 정보 업데이트
+    if (itinerary.city) {
+      this.city = itinerary.city;
+    }
+
     const daySums = this.calculateDaySums(days);
     const avgDaily = daySums.length
       ? Math.round(daySums.reduce((a, b) => a + b, 0) / daySums.length)
@@ -212,7 +220,7 @@ class RecommendationRenderer {
 
     this.container.innerHTML = days
       .map((dp, idx) =>
-        RecommendationRenderer.renderDayCard(dp, daySums[idx] || 0, avgDaily)
+        this.renderDayCard(dp, daySums[idx] || 0, avgDaily)
       )
       .join("");
 
