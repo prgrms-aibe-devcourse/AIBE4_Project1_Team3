@@ -357,6 +357,7 @@ router.get("/weather", async (req, res) => {
 
   // 필수 파라미터 검증
   if (!lat || !lng || !city || !startDate) {
+    console.error("[날씨 API] ❌ 필수 파라미터 누락:", { lat, lng, city, startDate });
     return res.status(400).json({
       error: "필수 파라미터가 누락되었습니다: lat, lng, city, startDate",
     });
@@ -372,6 +373,7 @@ router.get("/weather", async (req, res) => {
 
     // 5일 이내만 실시간 날씨 제공
     if (diffDays < 0) {
+      console.warn(`[날씨 API] ❌ 과거 날짜: ${diffDays}일`);
       return res.status(400).json({
         error: "과거 날짜는 실시간 예보를 제공할 수 없습니다.",
         diffDays,
@@ -379,12 +381,14 @@ router.get("/weather", async (req, res) => {
     }
 
     if (diffDays > 5) {
-      console.log(`[실시간 날씨 범위 초과] ${city} - ${diffDays}일 후`);
+      console.log(`[날씨 API] ⚠️ 범위 초과: ${city} - ${diffDays}일 후 (최대 5일)`);
       return res.status(400).json({
         error: "실시간 예보는 5일 이내만 가능합니다. AI 응답의 평균 날씨를 사용하세요.",
         diffDays,
       });
     }
+
+    console.log(`[날씨 API] ✅ 유효한 범위 (${diffDays}일 후) - fetchRealTimeWeather 호출 시작`);
 
     // 실시간 날씨 API 호출
     const weatherData = await fetchRealTimeWeather(
@@ -393,6 +397,8 @@ router.get("/weather", async (req, res) => {
       city,
       startDate
     );
+
+    console.log(`[날씨 API] fetchRealTimeWeather 완료 - 결과:`, weatherData ? "✅ 성공" : "❌ null 반환");
 
     if (!weatherData) {
       throw new Error("날씨 데이터를 가져올 수 없습니다.");

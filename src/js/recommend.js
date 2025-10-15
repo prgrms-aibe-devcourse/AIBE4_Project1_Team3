@@ -723,6 +723,8 @@ class AppController {
       travelDate.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil((travelDate - today) / (1000 * 60 * 60 * 24));
 
+      const apiBaseUrl = "http://localhost:3000";
+
       console.log(`[날씨 로직] ${city}, 여행까지 ${diffDays}일`);
 
       // 5일 이내: 실시간 날씨 API 호출
@@ -734,7 +736,9 @@ class AppController {
           startDate,
         });
 
-        const response = await fetch(`/api/routes/weather?${params}`);
+        const response = await fetch(
+          `${apiBaseUrl}/api/routes/weather?${params}`
+        );
 
         if (!response.ok) {
           throw new Error("실시간 날씨 API 오류");

@@ -160,8 +160,8 @@ export function sortStopsByTime(stops) {
 
   // 정렬 후 순서 로깅
   const afterOrder = sorted.map(s => {
-    const ts = s.timeSlot || inferTimeSlot(s.category);
-    return `${s.category}(${ts})`;
+      const ts = s.timeSlot || inferTimeSlot(s.category);
+      return `${s.category}(${ts})`;
   }).join(' → ');
 
   // 순서가 바뀐 경우만 로그 출력
@@ -232,31 +232,61 @@ export function calculateDaysDifference(date1, date2) {
  * OpenWeatherMap API로부터 실시간 날씨 예보를 가져옵니다.
  */
 export async function fetchRealTimeWeather(lat, lon, city, startDate) {
+  console.log(`[fetchRealTimeWeather] 호출됨 - city: ${city}, lat: ${lat}, lon: ${lon}, startDate: ${startDate}`);
+
   if (!isFinite(lat) || !isFinite(lon)) {
-    console.warn(`[fetchRealTimeWeather] 유효하지 않은 좌표: lat=${lat}, lon=${lon}`);
+    console.warn(
+      `[fetchRealTimeWeather] 유효하지 않은 좌표: lat=${lat}, lon=${lon}`
+    );
     return null;
   }
 
-  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
-  const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=kr`;
+  const OPENWEATHERMAP_API_KEY = process.env.OPENWEATHERMAP_API_KEY;
+  const OPENWEATHERMAP_API_URL = process.env.OPENWEATHERMAP_API_URL;
+
+  console.log("[fetchRealTimeWeather] 환경 변수 체크:");
+  console.log("  - API_KEY:", OPENWEATHERMAP_API_KEY ? `Loaded (${OPENWEATHERMAP_API_KEY.substring(0, 8)}...)` : "❌ Not found");
+  console.log("  - API_URL:", OPENWEATHERMAP_API_URL || "❌ Not found");
+
+  if (!OPENWEATHERMAP_API_KEY || !OPENWEATHERMAP_API_URL) {
+    console.error("[fetchRealTimeWeather] ❌ 환경 변수가 설정되지 않았습니다!");
+    return null;
+  }
+
+  const url = `${OPENWEATHERMAP_API_URL}?lat=${lat}&lon=${lon}&appid=${OPENWEATHERMAP_API_KEY}&units=metric&lang=kr`;
+
+  console.log("[fetchRealTimeWeather] API 요청 URL:", url);
 
   try {
+    console.log("[fetchRealTimeWeather] API 요청 시작...");
     const response = await fetch(url);
+    console.log("[fetchRealTimeWeather] API 응답 상태:", response.status, response.statusText);
+
     if (!response.ok) {
-      throw new Error(`OpenWeatherMap API 오류: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("[fetchRealTimeWeather] API 오류 응답:", errorText);
+      throw new Error(`OpenWeatherMap API 오류: ${response.statusText} - ${errorText}`);
     }
 
+    // 날씨 정보 API 결과값
     const data = await response.json();
+    console.log("[fetchRealTimeWeather] API 응답 데이터:", JSON.stringify(data, null, 2).substring(0, 500) + "...");
 
     // 여행 시작일의 예보 필터링
     const targetDate = new Date(startDate).toISOString().split("T")[0];
+    console.log("[fetchRealTimeWeather] 타겟 날짜:", targetDate);
+    console.log("[fetchRealTimeWeather] 가용 예보 날짜들:", data.list?.slice(0, 3).map(item => item.dt_txt));
+
     const forecasts = data.list.filter((item) => {
       const forecastDate = item.dt_txt.split(" ")[0];
       return forecastDate === targetDate;
     });
 
+    console.log("[fetchRealTimeWeather] 필터링된 예보 개수:", forecasts.length);
+
     if (forecasts.length === 0) {
-      console.warn(`[fetchRealTimeWeather] 예보 없음: ${city}, ${targetDate}`);
+      console.warn(`[fetchRealTimeWeather] ❌ 예보 없음: ${city}, ${targetDate}`);
+      console.warn(`[fetchRealTimeWeather] 가용한 날짜 범위를 확인하세요. 현재 API는 최대 5일 후까지만 제공합니다.`);
       return null;
     }
 
@@ -284,7 +314,7 @@ export async function fetchRealTimeWeather(lat, lon, city, startDate) {
     // 날씨별 팁과 계절 정보 생성
     const { season, tip } = getWeatherSeasonAndTip(mainWeather, tempHigh);
 
-    return {
+    const result = {
       city,
       tempHigh,
       tempLow,
@@ -295,8 +325,12 @@ export async function fetchRealTimeWeather(lat, lon, city, startDate) {
       isAverage: false,
       isRealTime: true,
     };
+
+    console.log("[fetchRealTimeWeather] ✅ 성공:", result);
+    return result;
   } catch (err) {
-    console.error("[fetchRealTimeWeather] API 호출 실패:", err.message);
+    console.error("[fetchRealTimeWeather] ❌ API 호출 실패:", err.message);
+    console.error("[fetchRealTimeWeather] 에러 스택:", err.stack);
     return null;
   }
 }
