@@ -316,10 +316,10 @@ class AppController {
     this.map.init([34.6937, 135.5023], 11);
     if (this.course) {
       console.log(this.course);
+      this.courseInput.value = JSON.stringify(this.course);
       this.cards.render(this.course, this.map);
       this.map.renderDayPlans(course.dayPlans);
       setTimeout(() => this.map.map.invalidateSize(), 0);
-      this.courseInput.value = JSON.stringify(this.course);
     } else {
       console.log("no data");
     }
