@@ -96,10 +96,11 @@
               <div>
                 <p class="text-xs text-gray-500">사용 가능 예산 (원)</p>
                 <input
-                  type="number"
+                  type="text"
                   name="budget"
-                  placeholder="1000000"
-                  min="0"
+                  id="budget-input"
+                  placeholder="1,000,000"
+                  oninput="formatBudget(this)"
                   class="font-semibold w-full max-w-[120px] p-1 rounded border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />
               </div>
@@ -152,10 +153,381 @@
         <div
           id="recommendation-grid"
           class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-        ></div>
+        >
+          <div
+            class="bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg flex flex-col"
+          >
+            <div class="flex-1">
+              <div>
+                <h3
+                  id="country-1"
+                  class="text-xl font-bold text-indigo-600 mb-4"
+                ></h3>
+
+                <div class="space-y-4 text-sm">
+                  <div class="flex justify-between items-center">
+                    <p class="text-gray-500 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0-6h.01M6 12H5m14 0h-1m-7-5.401A7.963 7.963 0 0112 4c4.418 0 8 3.582 8 8s-3.582 8-8 8-8-3.582-8-8c0-1.437.382-2.784 1.05-3.95"
+                        />
+                      </svg>
+                      현재 환율
+                    </p>
+                    <span
+                      id="current-rate-1"
+                      class="font-bold text-gray-800"
+                    ></span>
+                  </div>
+
+                  <div class="flex justify-between items-center">
+                    <p class="text-gray-500 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                        />
+                      </svg>
+                      예측 환율
+                    </p>
+                    <span
+                      id="forecasted_exchange_rate-1"
+                      class="font-bold text-gray-800"
+                    ></span>
+                  </div>
+
+                  <div
+                    class="flex justify-between items-center bg-indigo-50 p-3 rounded-lg -mx-3"
+                  >
+                    <p class="font-semibold text-indigo-700 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      1인 예상 경비
+                    </p>
+                    <span
+                      id="per_cost-1"
+                      class="font-extrabold text-indigo-700 text-lg"
+                    ></span>
+                  </div>
+
+                  <hr class="border-t border-gray-200 !my-5" />
+
+                  <div>
+                    <p class="text-gray-500 mb-2 font-medium flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      추천 이유
+                    </p>
+                    <span
+                      id="reason-1"
+                      class="text-gray-700 leading-relaxed block"
+                    ></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <canvas id="chart-1"></canvas>
+              </div>
+            </div>
+            <button
+              class="mt-6 w-full text-center py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+            >
+              추천 루트 보기
+            </button>
+          </div>
+          <div
+            class="bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg flex flex-col"
+          >
+            <div class="flex-1">
+              <div>
+                <h3
+                  id="country-2"
+                  class="text-xl font-bold text-indigo-600 mb-4"
+                ></h3>
+
+                <div class="space-y-4 text-sm">
+                  <div class="flex justify-between items-center">
+                    <p class="text-gray-500 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0-6h.01M6 12H5m14 0h-1m-7-5.401A7.963 7.963 0 0112 4c4.418 0 8 3.582 8 8s-3.582 8-8 8-8-3.582-8-8c0-1.437.382-2.784 1.05-3.95"
+                        />
+                      </svg>
+                      현재 환율
+                    </p>
+                    <span
+                      id="current-rate-2"
+                      class="font-bold text-gray-800"
+                    ></span>
+                  </div>
+
+                  <div class="flex justify-between items-center">
+                    <p class="text-gray-500 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                        />
+                      </svg>
+                      예측 환율
+                    </p>
+                    <span
+                      id="forecasted_exchange_rate-2"
+                      class="font-bold text-gray-800"
+                    ></span>
+                  </div>
+
+                  <div
+                    class="flex justify-between items-center bg-indigo-50 p-3 rounded-lg -mx-3"
+                  >
+                    <p class="font-semibold text-indigo-700 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      1인 예상 경비
+                    </p>
+                    <span
+                      id="per_cost-2"
+                      class="font-extrabold text-indigo-700 text-lg"
+                    ></span>
+                  </div>
+
+                  <hr class="border-t border-gray-200 !my-5" />
+
+                  <div>
+                    <p class="text-gray-500 mb-2 font-medium flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      추천 이유
+                    </p>
+                    <span
+                      id="reason-2"
+                      class="text-gray-700 leading-relaxed block"
+                    ></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <canvas id="chart-2"></canvas>
+              </div>
+            </div>
+            <button
+              class="mt-6 w-full text-center py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+            >
+              추천 루트 보기
+            </button>
+          </div>
+          <div
+            class="bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg flex flex-col"
+          >
+            <div class="flex-1">
+              <div>
+                <h3
+                  id="country-3"
+                  class="text-xl font-bold text-indigo-600 mb-4"
+                ></h3>
+
+                <div class="space-y-4 text-sm">
+                  <div class="flex justify-between items-center">
+                    <p class="text-gray-500 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0-6h.01M6 12H5m14 0h-1m-7-5.401A7.963 7.963 0 0112 4c4.418 0 8 3.582 8 8s-3.582 8-8 8-8-3.582-8-8c0-1.437.382-2.784 1.05-3.95"
+                        />
+                      </svg>
+                      현재 환율
+                    </p>
+                    <span
+                      id="current-rate-3"
+                      class="font-bold text-gray-800"
+                    ></span>
+                  </div>
+
+                  <div class="flex justify-between items-center">
+                    <p class="text-gray-500 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                        />
+                      </svg>
+                      예측 환율
+                    </p>
+                    <span
+                      id="forecasted_exchange_rate-3"
+                      class="font-bold text-gray-800"
+                    ></span>
+                  </div>
+
+                  <div
+                    class="flex justify-between items-center bg-indigo-50 p-3 rounded-lg -mx-3"
+                  >
+                    <p class="font-semibold text-indigo-700 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      1인 예상 경비
+                    </p>
+                    <span
+                      id="per_cost-3"
+                      class="font-extrabold text-indigo-700 text-lg"
+                    ></span>
+                  </div>
+
+                  <hr class="border-t border-gray-200 !my-5" />
+
+                  <div>
+                    <p class="text-gray-500 mb-2 font-medium flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      추천 이유
+                    </p>
+                    <span
+                      id="reason-3"
+                      class="text-gray-700 leading-relaxed block"
+                    ></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <canvas id="chart-3"></canvas>
+              </div>
+            </div>
+            <button
+              class="mt-6 w-full text-center py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+            >
+              추천 루트 보기
+            </button>
+          </div>
+        </div>
       </div>
     </main>
 
     <script type="module" src="js/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </body>
 </html>
