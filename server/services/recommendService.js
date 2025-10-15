@@ -103,6 +103,45 @@ export function normalizeCosts(itinerary, totalBudget, days) {
   return itinerary;
 }
 
+// 시간대별 우선순위 정의
+const TIME_SLOT_ORDER = {
+  morning: 1,
+  late_morning: 2,
+  afternoon: 3,
+  tea: 4,
+  evening: 5,
+  night: 6,
+};
+
+// category를 기반으로 기본 timeSlot 추론
+function inferTimeSlot(category) {
+  const categoryToTimeSlot = {
+    breakfast: "morning",
+    lunch: "afternoon",
+    snack: "tea",
+    cafe: "tea",
+    dinner: "evening",
+    nightlife: "night",
+    airport: "morning",
+    transfer: "morning",
+  };
+  return categoryToTimeSlot[category] || "late_morning";
+}
+
+// stops를 시간 순서대로 정렬
+export function sortStopsByTime(stops) {
+  return [...stops].sort((a, b) => {
+    // timeSlot이 없으면 category로부터 추론
+    const timeSlotA = a.timeSlot || inferTimeSlot(a.category);
+    const timeSlotB = b.timeSlot || inferTimeSlot(b.category);
+
+    const orderA = TIME_SLOT_ORDER[timeSlotA] || 99;
+    const orderB = TIME_SLOT_ORDER[timeSlotB] || 99;
+
+    return orderA - orderB;
+  });
+}
+
 export function ensureReasons(itinerary) {
   itinerary.dayPlans = (itinerary.dayPlans || []).map((d) => {
     const stops = (d.stops || []).map((s) => {
@@ -114,7 +153,9 @@ export function ensureReasons(itinerary) {
             }로, 인근 동선과 함께 방문하기 좋습니다.`;
       return { ...s, reason };
     });
-    return { ...d, stops };
+    // 시간순으로 정렬
+    const sortedStops = sortStopsByTime(stops);
+    return { ...d, stops: sortedStops };
   });
   return itinerary;
 }

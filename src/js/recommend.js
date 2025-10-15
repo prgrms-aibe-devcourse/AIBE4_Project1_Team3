@@ -35,8 +35,47 @@ class GeoUtils {
 }
 
 class ItineraryPlanner {
+  static TIME_SLOT_ORDER = {
+    morning: 1,
+    late_morning: 2,
+    afternoon: 3,
+    tea: 4,
+    evening: 5,
+    night: 6,
+  };
+
+  // category를 기반으로 기본 timeSlot 추론
+  static inferTimeSlot(category) {
+    const categoryToTimeSlot = {
+      breakfast: "morning",
+      lunch: "afternoon",
+      snack: "tea",
+      cafe: "tea",
+      dinner: "evening",
+      nightlife: "night",
+      airport: "morning",
+      transfer: "morning",
+    };
+    return categoryToTimeSlot[category] || "late_morning";
+  }
+
+  // stops를 시간 순서대로 정렬
+  static sortByTimeSlot(stops) {
+    return [...stops].sort((a, b) => {
+      const timeSlotA = a.timeSlot || ItineraryPlanner.inferTimeSlot(a.category);
+      const timeSlotB = b.timeSlot || ItineraryPlanner.inferTimeSlot(b.category);
+
+      const orderA = ItineraryPlanner.TIME_SLOT_ORDER[timeSlotA] || 99;
+      const orderB = ItineraryPlanner.TIME_SLOT_ORDER[timeSlotB] || 99;
+
+      return orderA - orderB;
+    });
+  }
+
   static optimizeDay(stops, { maxStops = 15, maxTravelKm = 75 } = {}) {
-    const pts = stops.filter((s) => isFinite(s.lat) && isFinite(s.lng));
+    // 먼저 시간순으로 정렬
+    const timeSorted = ItineraryPlanner.sortByTimeSlot(stops);
+    const pts = timeSorted.filter((s) => isFinite(s.lat) && isFinite(s.lng));
     if (pts.length <= 1) return pts;
     const ordered = [pts[0]];
     const remaining = pts.slice(1);
@@ -218,15 +257,46 @@ class RecommendationRenderer {
     return "";
   }
 
+  static getMealIcon(category) {
+    const mealIcons = {
+      breakfast: "🍳",
+      lunch: "🍴",
+      dinner: "🍽️",
+      snack: "🍰",
+      cafe: "☕"
+    };
+    return mealIcons[category] || "";
+  }
+
+  static getMealLabel(category) {
+    const mealLabels = {
+      breakfast: "아침",
+      lunch: "점심",
+      dinner: "저녁",
+      snack: "간식",
+      cafe: "카페"
+    };
+    return mealLabels[category] || "";
+  }
+
   static renderStop(stop, index) {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
     const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+    const category = stop.category || "";
+    const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(category);
+    const mealIcon = isMeal ? RecommendationRenderer.getMealIcon(category) : "";
+    const mealLabel = isMeal ? RecommendationRenderer.getMealLabel(category) : "";
+    const mealClass = isMeal ? "meal-stop" : "";
 
     return `
-      <li class="stops-row">
+      <li class="stops-row ${mealClass}" data-category="${escapeHtml(category)}">
         <span class="idx">${index + 1}</span>
         <div class="place">
-          <div class="name">${escapeHtml(stop.placeName)}</div>
+          <div class="name">
+            ${mealIcon ? `<span class="meal-icon">${mealIcon}</span>` : ""}
+            ${mealLabel ? `<span class="meal-label">${mealLabel}</span>` : ""}
+            ${escapeHtml(stop.placeName)}
+          </div>
           <div class="sub">${escapeHtml(stop.summary || "")}</div>
           ${
             stop.stopReason

@@ -36,37 +36,51 @@ router.post("/ai/itinerary", async (req, res) => {
       호텔 조식은 뺀다.
 
       규칙(핵심):
-      1) 아침밥, 점심밥, 저녁밥을 꼭 포함한다. 첫날은 공항에서 도착후 시내이동, 저녁밥 먹기로 시작한다.
+      1) **식사 필수 규칙(절대 빠뜨리지 말 것)**:
+         - 매일 아침, 점심, 저녁 3끼 식사를 반드시 포함한다.
+         - 각 식사는 별도의 stop으로 구성하고, category를 "breakfast", "lunch", "dinner"로 명시한다.
+         - 첫날은 공항에서 도착 후 시내이동, 저녁밥 먹기로 시작한다.
+         - 식사를 빼먹으면 안 됨! 하루에 3끼를 정확히 포함해야 한다.
       2) 마지막날은 남은돈을 면세점에서 모두 털어서 사용한다.
 
-      1) 도시 제한: 반드시 "${city}" 내부에서만 추천한다.
-      2) 스톱 수: 하루 5~8개(이동 동선 자연스럽게). Day 1부터 Day ${days}까지 모든 날짜를 포함해야 한다.
-        - Day 1: "공항 도착(airport)→시내 이동(transfer)→관광/식사→프리미엄 저녁"
-        - Day ${days}: "오전 관광/쇼핑→프리미엄 식사(점심 또는 저녁)→시내→공항(transfer)→공항 체크인(airport)"
-        - 중간 날짜들(Day 2 ~ Day ${days - 1}): 각 날마다 3~5개의 관광/식사/쇼핑 일정 포함
-      3) 식사/쇼핑 철학(1인 기준):
+      3) 도시 제한: 반드시 "${city}" 내부에서만 추천한다.
+      4) 스톱 수: 하루 8~11개(식사 3개 + 관광/쇼핑 5~8개). Day 1부터 Day ${days}까지 모든 날짜를 포함해야 한다.
+        - Day 1: "공항 도착(airport)→시내 이동(transfer)→저녁식사(dinner, 필수)→관광/쇼핑"
+        - Day ${days}: "아침식사(breakfast, 필수)→점심식사(lunch, 필수)→오전 관광/쇼핑→시내→공항(transfer)→공항 체크인(airport)"
+        - 중간 날짜들(Day 2 ~ Day ${days - 1}): 각 날마다 아침/점심/저녁 3끼 + 관광/식사/쇼핑 5~8개 일정 포함
+      5) 식사/쇼핑 철학(1인 기준):
+        - **식사 필수**: 매일 아침(breakfast), 점심(lunch), 저녁(dinner) 3끼를 빠짐없이 포함한다.
         - 매일 쇼핑 또는 대형 상업시설 1곳 이상 포함(백화점/아울렛/상점가/드럭스토어/전자상가 등).
         - 전체 일정에서 "프리미엄(비싼) 식사" 최소 2회 이상(가능하면 Day 1 & Day ${days} 포함).
         - "must-visit" 필수 방문지 최소 3곳(랜드마크, 대표 맛집, 대표 쇼핑 허브 등).
         - **최소 비용 기준(1인)**: 일반 식사(아침/점심) 최소 8,000원, 저녁 식사 최소 15,000원, 프리미엄 식사 최소 30,000원, 관광지 입장료 최소 10,000원, 쇼핑 최소 20,000원.
-      4) 정보 필수 항목(모든 스톱):
+      6) 정보 필수 항목(모든 스톱):
         - placeName, summary(50자 이내), reason(현실적 근거), costReason, estimatedCost(정수 KRW, 1인 기준),
-          lat, lng(실좌표), tags(예: ["shopping","premium-dinner","must-visit","landmark","local-food"])
-      5) dayReason: 각 날짜 테마/분위기를 서로 다르게(중복 표현 금지).
-      6) 예산 분배(1인 기준):
+          lat, lng(실좌표), category(필수: "breakfast"|"lunch"|"dinner"|"sightseeing"|"shopping" 등),
+          tags(예: ["shopping","premium-dinner","must-visit","landmark","local-food"])
+      7) dayReason: 각 날짜 테마/분위기를 서로 다르게(중복 표현 금지).
+      8) 예산 분배(1인 기준):
         - 전체 합계(overallTotal) ∈ [${Math.round(budgetPerPerson * 0.95)}, ${Math.round(budgetPerPerson * 1.05)}] (반드시 95~100% 소진, 절대 90% 미만 금지)
         - 일평균 목표: ${Math.round(budgetPerPerson / days)}원 ±10%
         - 비용 산정은 JPY 단가 → KRW 환산(정수 반올림). 예: Y = round(X엔 × ${fx})원
         - costReason 형식(1인 기준): "단가(엔) × 수량 = X엔 → 1엔=${fx}원 → Y원(1인)"
         - **중요**: 위의 최소 비용 기준을 반드시 준수하고, 각 항목의 실제 비용은 최소 기준의 1.5~2배 수준으로 설정하여 예산을 충분히 활용한다.
-      7) 좌표 신뢰성: 바다/무효 좌표 금지, 실존 장소 좌표만.
-      8) 중복 금지: 동일 장소 반복 금지(지점이 다르면 허용 가능).
-      9) 출력 형식: **유효한 JSON만 반환**(설명/마크다운/코드블록 금지). 모든 합계는 정수이며 정확히 일치.
-      10) **중요**: dayPlans 배열에는 정확히 ${days}개의 day 객체가 포함되어야 한다. (day: 1부터 day: ${days}까지)
+      9) 좌표 신뢰성: 바다/무효 좌표 금지, 실존 장소 좌표만.
+      10) 중복 금지: 동일 장소 반복 금지(지점이 다르면 허용 가능).
+      11) 출력 형식: **유효한 JSON만 반환**(설명/마크다운/코드블록 금지). 모든 합계는 정수이며 정확히 일치.
+      12) **중요**: dayPlans 배열에는 정확히 ${days}개의 day 객체가 포함되어야 한다. (day: 1부터 day: ${days}까지)
+      13) **식사 검증 필수**: 각 day마다 category가 "breakfast", "lunch", "dinner"인 stop이 각각 최소 1개씩 있어야 한다.
 
       카테고리/타임슬롯(권장):
       - category: "airport" | "transfer" | "breakfast" | "lunch" | "snack" | "cafe" | "dinner" | "sightseeing" | "shopping" | "activity" | "nightlife"
       - timeSlot: "morning" | "late_morning" | "afternoon" | "tea" | "evening" | "night"
+
+      **중요: 시간순 정렬 규칙**
+      모든 dayPlans의 stops 배열은 반드시 실제 시간 순서대로 정렬되어야 한다.
+      - 아침(breakfast, morning) → 오전 관광(sightseeing/shopping, late_morning) → 점심(lunch, afternoon) → 오후 활동(activity/shopping, tea/afternoon) → 저녁(dinner, evening) → 야간 활동(nightlife, night) 순으로 배치한다.
+      - 간식(snack) 또는 카페(cafe)는 오전과 오후 사이에 배치할 수 있다.
+      - stops 배열 내 순서가 이 시간대 순서와 일치하지 않으면 잘못된 출력으로 간주한다.
+      - 각 stop의 timeSlot은 category와 일치해야 한다: breakfast→morning, lunch→afternoon, dinner→evening
 
       출력 스키마(JSON만):
       {
@@ -108,12 +122,15 @@ router.post("/ai/itinerary", async (req, res) => {
         "costReason": "단가(엔) × 수량 = X엔 → 1엔=${fx}원 → Y원(1인)",
         "estimatedCost": 50000,
         "lat": 35.0000,
-        "lng": 2,000,000,
+        "lng": 135.0000,
+        "category": "breakfast",
+        "timeSlot": "morning",
         "tags": ["must-visit","shopping"]
       }
 
       검증 체크리스트:
       - dayPlans 배열 길이 = ${days} (모든 날짜 포함)
+      - **식사 필수 검증**: 각 day마다 category="breakfast", "lunch", "dinner" 각각 최소 1개씩 포함 확인
       - dayTotal = 해당 day의 estimatedCost 합(정확히 일치), overallTotal = 모든 dayTotal 합
       - overallTotal ∈ [${Math.round(budgetPerPerson * 0.95)}, ${budgetPerPerson}] (반드시 95~100%, 절대 90% 미만 금지)
       - Day 1/마지막 날: 공항/이동/프리미엄 식사 포함
