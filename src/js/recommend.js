@@ -432,6 +432,84 @@ class AppController {
       });
     }
     this.form.addEventListener("submit", (e) => this.handleSubmit(e));
+
+    // URL 파라미터 확인 및 자동 실행
+    this.checkUrlParams();
+  }
+
+  checkUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const city = params.get('city');
+    const startDate = params.get('startDate');
+    const endDate = params.get('endDate');
+    const people = params.get('people');
+    const budget = params.get('budget');
+
+    if (city && startDate && endDate && people && budget) {
+      // 폼에 값 채우기
+      if (this.start) this.start.value = startDate;
+      if (this.end) this.end.value = endDate;
+      if (this.people) this.people.value = people;
+      if (this.budget) this.budget.value = Number(budget).toLocaleString('ko-KR');
+
+      // 자동으로 검색 실행
+      this.autoSubmit(city, startDate, endDate, people, Number(budget));
+    }
+  }
+
+  async autoSubmit(city, startDate, endDate, people, budgetNum) {
+    showLoading(this.loading);
+    this.mapContainer.hidden = true;
+
+    try {
+      const itinerary = await getAiRecommendation({
+        city,
+        startDate,
+        endDate,
+        people,
+        budget: budgetNum,
+      });
+
+      if (!itinerary || !itinerary.dayPlans || !itinerary.dayPlans.length) {
+        throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
+      }
+
+      const fx = 9.5;
+      sanitizePlan(itinerary, fx);
+
+      const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
+      const finalItin = { city: itinerary.city || city, dayPlans: optimized };
+
+      sanitizePlan(finalItin, fx);
+
+      this.map.init([34.6937, 135.5023], 11);
+      this.cards.render(finalItin, this.map);
+      this.map.renderDayPlans(finalItin.dayPlans);
+      this.mapContainer.hidden = false;
+      setTimeout(() => this.map.map.invalidateSize(), 0);
+      this.reviewBtn.hidden = false;
+
+      this.reviewBtn.addEventListener("click", () => {
+        sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
+        window.location.href = "/src/review-form.html";
+      });
+    } catch (err) {
+      console.error("AI 추천 오류:", err);
+
+      let errorMessage = "추천 데이터를 불러오지 못했습니다.";
+      if (err.message.includes("Failed to fetch")) {
+        errorMessage =
+          "서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.";
+      } else if (err.message.includes("AI 추천 요청 실패")) {
+        errorMessage = `서버 오류가 발생했습니다: ${err.message}`;
+      } else if (err.message) {
+        errorMessage += `<br/><small>${escapeHtml(err.message)}</small>`;
+      }
+
+      this.result.innerHTML = `<p style="color: #ef4444;">${errorMessage}</p>`;
+    } finally {
+      hideLoading(this.loading);
+    }
   }
   async handleSubmit(e) {
     e.preventDefault();
