@@ -1,10 +1,11 @@
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
+  const apiBaseUrl = "http://localhost:3000";
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
-  const budget = form.elements.budget.value;
+  const budget = form.elements.budget.value.replace(/,/g, "");
   const people = form.elements.people.value;
 
   const resultsDiv = document.getElementById("results-container");
@@ -22,7 +23,7 @@ window.handleFormSubmit = async function (event) {
   loadingP.classList.remove("hidden");
 
   try {
-    const response = await fetch("http://localhost:3000/api/recommend", {
+    const response = await fetch(`${apiBaseUrl}/api/recommend`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -35,12 +36,7 @@ window.handleFormSubmit = async function (event) {
       throw new Error(errorData.error || "서버에서 오류가 발생했습니다.");
     }
 
-    const text = await response.text();
-    const jsonText = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-    const data = JSON.parse(jsonText);
+    const data = await response.json();
 
     displayResults(data.recommendations);
   } catch (error) {
@@ -60,10 +56,21 @@ function displayResults(recommendations) {
     const rank = index + 1;
     document.getElementById(`country-${rank}`).innerText = rec.country;
     document.getElementById(`current-rate-${rank}`).innerText =
-      rec.current_rate;
-    document.getElementById(`future_rate-${rank}`).innerText = rec.future_rate;
+      rec.current_rate.toLocaleString("ko-KR");
+    document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
+      rec.forecasted_exchange_rate.toLocaleString("ko-KR");
+    document.getElementById(`reason-${rank}`).innerText = rec.reason;
+    document.getElementById(`per_cost-${rank}`).innerText =
+      rec.per_cost.toLocaleString("ko-KR") + "원";
   });
 }
+
+window.formatBudget = function (input) {
+  let value = input.value.replace(/[^\d]/g, "");
+  if (value) {
+    input.value = parseInt(value, 10).toLocaleString("ko-KR");
+  }
+};
 
 function getFormattedDate(date = new Date()) {
   return date.toISOString().slice(0, 10);

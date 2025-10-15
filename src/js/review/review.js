@@ -6,7 +6,7 @@ let totalPages = 1;
 
 // 게시글 로드
 async function loadPosts() {
-  const res = await fetch(`${apiServerUrl}/api/review?page=${page}`);
+  const res = await fetch(`${apiServerUrl}/api/review/receive/?page=${page}`);
   const result = await res.json();
 
   const container = document.getElementById("postsBody");
