@@ -104,8 +104,8 @@ class RecommendationRenderer {
     return Number(stop.estimatedCost) || 0;
   }
 
-  renderCostBreakdown(stop) {
-    const currencySymbol = getCurrencySymbol(this.city);
+  renderCostBreakdown(stop, city) {
+    const currencySymbol = getCurrencySymbol(city);
 
     if (Array.isArray(stop.costBreakdown) && stop.costBreakdown.length) {
       const items = stop.costBreakdown
@@ -124,13 +124,8 @@ class RecommendationRenderer {
             <strong>${escapeHtml(
               item.category || "기타"
             )}</strong>${basis}${conf}<br/>
-<<<<<<< HEAD
             단가: ${currencySymbol}${unit.toLocaleString()} × ${qty} = ${currencySymbol}${subJPY.toLocaleString()}<br/>
-            원화: ${formatCurrency(subKRW)}
-=======
-            단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
             원화: ${subKRW === 0 ? "무료" : formatCurrency(subKRW)}
->>>>>>> dev
           </li>`;
         })
         .join("");
@@ -177,9 +172,9 @@ class RecommendationRenderer {
     return mealLabels[category] || "";
   }
 
-  static renderStop(stop, index) {
+  renderStop(stop, index, city) {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
-    const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+    const cbHTML = this.renderCostBreakdown(stop, city);
     const category = stop.category || "";
     const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(
       category
@@ -215,12 +210,12 @@ class RecommendationRenderer {
       </li>`;
   }
 
-  renderDayCard(dayPlan, daySum, avgDaily) {
+  renderDayCard(dayPlan, daySum, avgDaily, city) {
     const pct = avgDaily
       ? Math.min(100, Math.round((daySum / avgDaily) * 100))
       : 0;
     const rows = (dayPlan.stops || [])
-      .map((s, i) => this.renderStop(s, i))
+      .map((s, i) => this.renderStop(s, i, city))
       .join("");
 
     return `
@@ -289,6 +284,7 @@ class RecommendationRenderer {
     }
 
     // 도시 정보 업데이트
+    const city = itinerary.city || this.city;
     if (itinerary.city) {
       this.city = itinerary.city;
     }
@@ -300,7 +296,7 @@ class RecommendationRenderer {
 
     this.container.innerHTML = days
       .map((dp, idx) =>
-        this.renderDayCard(dp, daySums[idx] || 0, avgDaily)
+        this.renderDayCard(dp, daySums[idx] || 0, avgDaily, city)
       )
       .join("");
 
@@ -310,8 +306,8 @@ class RecommendationRenderer {
 
 class AppController {
   constructor() {
-    this.map = new MapRenderer("mapContainer");
     this.course = JSON.parse(sessionStorage.getItem("reviewCourse"));
+    this.map = new MapRenderer("mapContainer");
     this.result = document.getElementById("recommendResult");
     this.cards = new RecommendationRenderer(this.result);
     this.courseInput = document.getElementById("course");
@@ -320,10 +316,10 @@ class AppController {
     this.map.init([34.6937, 135.5023], 11);
     if (this.course) {
       console.log(this.course);
-      this.cards.render(course, this.map);
-      this.map.renderDayPlans(course.dayPlans);
-      setTimeout(() => this.map.map.invalidateSize(), 0); //지도 깨짐 방지
       this.courseInput.value = JSON.stringify(this.course);
+      this.cards.render(this.course, this.map);
+      this.map.renderDayPlans(course.dayPlans);
+      setTimeout(() => this.map.map.invalidateSize(), 0);
     } else {
       console.log("no data");
     }
