@@ -625,7 +625,7 @@ class AppController {
 
   async autoSubmit(city, startDate, endDate, people, budgetNum) {
     showLoading(this.loading);
-    this.rightPanel.style.display = null;
+    this.rightPanel.style.display = "none";
 
     try {
       const itinerary = await getAiRecommendation({
