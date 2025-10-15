@@ -242,7 +242,7 @@ class RecommendationRenderer {
               item.category || "기타"
             )}</strong>${basis}${conf}<br/>
             단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
-            원화: ${formatCurrency(subKRW)}
+            원화: ${subKRW === 0 ? "무료" : formatCurrency(subKRW)}
           </li>`;
         })
         .join("");
@@ -315,7 +315,7 @@ class RecommendationRenderer {
           }
           ${cbHTML}
         </div>
-        <span class="cost">${formatCurrency(stopSum)}</span>
+        <span class="cost">${stopSum === 0 ? "무료" : formatCurrency(stopSum)}</span>
       </li>`;
   }
 
