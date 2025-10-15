@@ -35,7 +35,7 @@ class GeoUtils {
 }
 
 class ItineraryPlanner {
-  static optimizeDay(stops, { maxStops = 5, maxTravelKm = 25 } = {}) {
+  static optimizeDay(stops, { maxStops = 15, maxTravelKm = 75 } = {}) {
     const pts = stops.filter((s) => isFinite(s.lat) && isFinite(s.lng));
     if (pts.length <= 1) return pts;
     const ordered = [pts[0]];
@@ -276,11 +276,10 @@ class RecommendationRenderer {
   }
 
   calculateDaySums(days) {
-    return days.map((dp) => {
-      // sanitizePlan에서 이미 dayTotal을 정확히 계산했으므로 반드시 이를 사용
-      // 다른 필드(dayTotalKRW 등)는 잘못된 값일 수 있으므로 무시
-      return Number(dp.dayTotal) || 0;
-    });
+    // 실제 화면에 표시되는 stops의 합계를 기준으로 계산
+    return days.map((dp) =>
+      (dp.stops || []).reduce((sum, s) => sum + (Number(s.estimatedCost) || 0), 0)
+    );
   }
 
   attachCardToggleEvents(dayPlans, map) {
@@ -395,13 +394,13 @@ class AppController {
         throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
       }
 
-      // AI 응답을 받은 직후 금액 데이터 정규화
-      // costReason에서 실제 금액을 파싱해서 estimatedCost를 보정
-      const fx = 9.5; // JPY → KRW 환율 (필요시 동적으로 가져올 수 있음)
+      const fx = 9.5; 
       sanitizePlan(itinerary, fx);
 
       const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
       const finalItin = { city: itinerary.city || city, dayPlans: optimized };
+
+      sanitizePlan(finalItin, fx);
 
       this.map.init([34.6937, 135.5023], 11);
       this.cards.render(finalItin, this.map);
