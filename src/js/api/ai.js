@@ -17,7 +17,7 @@ export async function getAiRecommendation({
     return mockItinerary(city, budget);
   }
 
-  const response = await fetch(`${API_BASE}/ai/itinerary`, {
+  const response = await fetch(`${API_BASE}/api/routes/ai/itinerary`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ city, startDate, endDate, people, budget }),
