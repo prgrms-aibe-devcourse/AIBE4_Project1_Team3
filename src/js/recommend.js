@@ -407,6 +407,7 @@ class AppController {
     this.people = document.getElementById("travelPeople");
     this.budget = document.getElementById("travelBudget");
     this.city = document.getElementById("travelCity");
+    this.reviewBtn = document.getElementById("reviewBtn");
   }
   init() {
     if (this.budget)
@@ -477,6 +478,12 @@ class AppController {
       this.map.renderDayPlans(finalItin.dayPlans);
       this.mapContainer.hidden = false;
       setTimeout(() => this.map.map.invalidateSize(), 0); //지도 깨짐 방지
+      this.reviewBtn.hidden = false;
+
+      this.reviewBtn.addEventListener("click", () => {
+        sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
+        window.location.href = "/src/review-form.html";
+      });
     } catch (err) {
       console.error("AI 추천 오류:", err);
 
