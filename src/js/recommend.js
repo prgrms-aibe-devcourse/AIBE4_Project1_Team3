@@ -598,8 +598,18 @@ class AppController {
     }
     this.form.addEventListener("submit", (e) => this.handleSubmit(e));
 
+    // sessionStorage에서 city 정보 복원
+    this.restoreCityFromStorage();
+
     // URL 파라미터 확인 및 자동 실행
     this.checkUrlParams();
+  }
+
+  restoreCityFromStorage() {
+    const savedCity = sessionStorage.getItem("travelCity");
+    if (savedCity && this.city && !this.city.value) {
+      this.city.value = savedCity;
+    }
   }
 
   checkUrlParams() {
@@ -612,11 +622,15 @@ class AppController {
 
     if (city && startDate && endDate && people && budget) {
       // 폼에 값 채우기
+      if (this.city) this.city.value = city;
       if (this.start) this.start.value = startDate;
       if (this.end) this.end.value = endDate;
       if (this.people) this.people.value = people;
       if (this.budget)
         this.budget.value = Number(budget).toLocaleString("ko-KR");
+
+      // city 정보를 sessionStorage에 저장
+      sessionStorage.setItem("travelCity", city);
 
       // 자동으로 검색 실행
       this.autoSubmit(city, startDate, endDate, people, Number(budget));
@@ -768,7 +782,7 @@ class AppController {
     const end = this.end?.value;
     const people = (this.people?.value || "").trim();
     const budgetNum = Number(stripDigits(this.budget?.value || ""));
-    const city = (this.city?.value || "오사카").trim();
+    const city = (this.city?.value || sessionStorage.getItem("travelCity") || "오사카").trim();
     const peopleNum = parseInt(people, 10);
 
     if (!start || !end || !people || !budgetNum) {
@@ -787,6 +801,9 @@ class AppController {
       alert("종료일은 시작일보다 빠를 수 없습니다.");
       return;
     }
+
+    // city 정보를 sessionStorage에 저장
+    sessionStorage.setItem("travelCity", city);
 
     showLoading(this.loading);
     this.rightPanel.style.display = "none";

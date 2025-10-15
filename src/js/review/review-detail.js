@@ -104,8 +104,8 @@ class RecommendationRenderer {
     return Number(stop.estimatedCost) || 0;
   }
 
-  renderCostBreakdown(stop) {
-    const currencySymbol = getCurrencySymbol(this.city);
+  renderCostBreakdown(stop, city) {
+    const currencySymbol = getCurrencySymbol(city);
 
     if (Array.isArray(stop.costBreakdown) && stop.costBreakdown.length) {
       const items = stop.costBreakdown
@@ -172,9 +172,9 @@ class RecommendationRenderer {
     return mealLabels[category] || "";
   }
 
-  static renderStop(stop, index) {
+  renderStop(stop, index, city) {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
-    const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+    const cbHTML = this.renderCostBreakdown(stop, city);
     const category = stop.category || "";
     const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(
       category
@@ -210,12 +210,12 @@ class RecommendationRenderer {
       </li>`;
   }
 
-  renderDayCard(dayPlan, daySum, avgDaily) {
+  renderDayCard(dayPlan, daySum, avgDaily, city) {
     const pct = avgDaily
       ? Math.min(100, Math.round((daySum / avgDaily) * 100))
       : 0;
     const rows = (dayPlan.stops || [])
-      .map((s, i) => this.renderStop(s, i))
+      .map((s, i) => this.renderStop(s, i, city))
       .join("");
 
     return `
@@ -284,6 +284,7 @@ class RecommendationRenderer {
     }
 
     // 도시 정보 업데이트
+    const city = itinerary.city || this.city;
     if (itinerary.city) {
       this.city = itinerary.city;
     }
@@ -295,7 +296,7 @@ class RecommendationRenderer {
 
     this.container.innerHTML = days
       .map((dp, idx) =>
-        this.renderDayCard(dp, daySums[idx] || 0, avgDaily)
+        this.renderDayCard(dp, daySums[idx] || 0, avgDaily, city)
       )
       .join("");
 

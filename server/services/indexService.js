@@ -7,34 +7,21 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
 const candidateCountries = [
-  // { name: "중국", currency: "CNH" },
-  // { name: "프랑스", currency: "EUR" },
-  // { name: "영국", currency: "GBP" },
-  { name: "일본", currency: "JPY" },
-  // { name: "태국", currency: "THB" },
+  { name: "중국", currency: "CNH" },
+  { name: "프랑스", currency: "EUR" },
+  { name: "영국", currency: "GBP" },
+  { name: "일본", currency: "JPY100" },
+  { name: "태국", currency: "THB" },
   { name: "미국", currency: "USD" },
 ];
 
 const currencyUnitMap = {
-  JPY: 100, // 일본 엔화 100엔 단위
+  JPY100: 100, // 일본 엔화 100엔 단위
   CNH: 1, // 중국 위안 (CNH) — 1단위
   EUR: 1, // 유로화 — 1단위
   GBP: 1, // 영국 파운드 — 1단위
   THB: 1, // 태국 바트 — 1단위
   USD: 1, // 미국 달러 — 1단위
-};
-
-// 예시
-const exchangeRatesData = {
-  JPY: {
-    current: 900.5, // 100엔 당 원화
-    historical: [920.1, 915.6, 910.0, 905.4, 902.3, 898.9], // 6개월 전부터 1개월 전까지, 매월 1일 환율
-  },
-  USD: {
-    current: 1350.8,
-    historical: [1320.0, 1325.5, 1330.1, 1340.0, 1345.2, 1348.0],
-  },
-  // ... 다른 통화 데이터
 };
 
 function analyzeRateTrend(currentRate, historicalRates) {
@@ -62,7 +49,13 @@ function analyzeRateTrend(currentRate, historicalRates) {
   return `${trendPercentage.toFixed(2)}% (${trendDirection})`;
 }
 
-export async function recommend({ startDate, endDate, budget, people }) {
+export async function recommend({
+  startDate,
+  endDate,
+  budget,
+  people,
+  exchangeRatesData,
+}) {
   const start = new Date(startDate);
   const end = new Date(endDate);
   // 두 날짜 간의 차이(밀리초)를 일수로 변환 (시작일과 종료일 모두 포함)
@@ -70,19 +63,12 @@ export async function recommend({ startDate, endDate, budget, people }) {
 
   const contextDataForPrompt = candidateCountries.map((country) => {
     const rates = exchangeRatesData[country.currency];
-    const unit = currencyUnitMap[country.currency];
+    const unit = currencyUnitMap[country.currency] || 1;
     const trend = analyzeRateTrend(rates.current, rates.historical);
 
-    let currentExchangeRateDisplay;
-    if (country.currency === "JPY") {
-      currentExchangeRateDisplay = `${rates.current.toFixed(2)} KRW / 100 ${
-        country.currency
-      }`;
-    } else {
-      currentExchangeRateDisplay = `${rates.current.toFixed(2)} KRW / 1 ${
-        country.currency
-      }`;
-    }
+    const currentExchangeRateDisplay = `${rates.current.toFixed(
+      2
+    )} KRW / ${unit} ${country.currency}`;
 
     return {
       name: country.name,

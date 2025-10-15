@@ -1,3 +1,10 @@
+let exchangeRatesData;
+
+document.addEventListener("DOMContentLoaded", async () => {
+  exchangeRatesData = await renderGraph();
+  console.log(exchangeRatesData);
+});
+
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
@@ -9,8 +16,6 @@ window.handleFormSubmit = async function (event) {
   const people = form.elements.people.value;
 
   const resultsDiv = document.getElementById("results-container");
-
-  document.getElementById("recommendation-grid").classList.add("hidden");
 
   let loadingP = document.getElementById("loading-message");
   if (!loadingP) {
@@ -28,7 +33,13 @@ window.handleFormSubmit = async function (event) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ startDate, endDate, budget, people }),
+      body: JSON.stringify({
+        startDate,
+        endDate,
+        budget,
+        people,
+        exchangeRatesData,
+      }),
     });
 
     if (!response.ok) {
@@ -109,7 +120,6 @@ initializeForm();
 
 // chart
 
-document.addEventListener("DOMContentLoaded", renderGraph);
 const currencyMap = {
   USD: { name: "미국", unit: "달러" },
   EUR: { name: "유럽", unit: "유로" },
@@ -120,12 +130,13 @@ const currencyMap = {
 };
 
 async function renderGraph() {
+  const exchangeRatesData = {};
   const response = await fetch("http://localhost:3000/api/exchange");
   const apiData = await response.json();
   const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
   console.log(apiData);
-  const containerGraph = document.querySelector("#recommendation-grid");
+  const containerGraph = document.querySelector("#chart-grid");
   Object.keys(currencyMap).forEach((code) => {
     const countryInfo = currencyMap[code];
     const rateData = currencyData[code];
@@ -134,6 +145,13 @@ async function renderGraph() {
     const initialRate = rateData[0];
     const rateChange = ((currentRate - initialRate) / initialRate) * 100;
     const trendText = rateChange.toFixed(2) + "%";
+
+    exchangeRatesData[code] = {
+      current: currentRate,
+      historical: rateData
+        .slice(0, rateData.length - 1)
+        .map((value) => (value === null || value === undefined ? 0 : value)),
+    };
 
     let trendColorClass;
     if (rateChange < 0) {
@@ -249,4 +267,5 @@ async function renderGraph() {
       },
     });
   });
+  return exchangeRatesData;
 }
