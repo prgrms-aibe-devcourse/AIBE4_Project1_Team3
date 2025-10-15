@@ -166,21 +166,30 @@ const EXCHANGE_API_KEY = process.env.EXCHANGE_API_KEY;
 const EXCHANGE_API_URL = process.env.EXCHANGE_API_URL;
 
 export async function fetchExchangeRate(searchDate) {
-  const url = `${EXCHANGE_API_URL}?authkey=${EXCHANGE_API_KEY}&searchdate=${searchDate}&data=AP01`;
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    if (data.length === 0 || data.errCd) {
-      console.warn(
-        `[${searchDate}] 데이터 없음:`,
-        data.errMsg || "데이터가 비어있습니다."
-      );
+  while (1) {
+    let targetDate = new Date(
+      searchDate.substring(0, 4),
+      searchDate.substring(4, 6) - 1,
+      searchDate.substring(6, 8)
+    );
+
+    const url = `${EXCHANGE_API_URL}?authkey=${EXCHANGE_API_KEY}&searchdate=${searchDate}&data=AP01`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.length === 0 || data.errCd) {
+        console.warn(
+          `[${searchDate}] 데이터 없음:`,
+          data.errMsg ||
+            "데이터가 비어있습니다. 그 당시 전일 데이터를 불러옵니다"
+        );
+        targetDate.setDate(targetDate.getDate() - 1);
+        searchDate = formatDateToYYYYMMDD(targetDate);
+      } else return data;
+    } catch (error) {
+      console.error(`API 호출 중 오류 발생 (${searchDate}):`, error);
       return null;
     }
-    return data;
-  } catch (error) {
-    console.error(`API 호출 중 오류 발생 (${searchDate}):`, error);
-    return null;
   }
 }
 
@@ -210,5 +219,5 @@ export function subtractBusinessDays(startDate, daysToSubtract) {
       date.setMonth(date.getMonth() - 1);
     } else date.setDate(date.getDate() - 1);
   }
-  return businessDays;
+  return businessDays.reverse();
 }
