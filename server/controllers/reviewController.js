@@ -1,30 +1,24 @@
-import express from "express";
+import { Router } from "express";
 import dotenv from "dotenv";
-import path from "path";
 import { fileURLToPath } from "url";
+import path from "path";
 import { createClient } from "@supabase/supabase-js";
 
-const app = express();
-const PORT = 3000;
+dotenv.config();
 
+const router = Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-app.use(express.static(path.resolve(__dirname, "../src")));
-app.use(express.json());
-
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
-
 const { SUPABASE_KEY: supabaseKey, SUPABASE_URL: supabaseUrl } = process.env;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 리뷰 게시판 페이지
-app.get("/review", (req, res) => {
+router.get("/review", (req, res) => {
   res.sendFile(path.join(__dirname, "../src/review.html"));
 });
 
 // 리뷰 데이터 가져옴
-app.get("/api/review", async (req, res) => {
+router.get("/api/review", async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = 8;
   const from = (page - 1) * limit;
@@ -46,11 +40,9 @@ app.get("/api/review", async (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
-});
-
 // 여행 경로 리뷰 작성 페이지
-app.get("/review/create", (req, res) => {
+router.get("/review/create", (req, res) => {
   res.sendFile(path.join(__dirname, "../src/review-form.html"));
 });
+
+export default router;
