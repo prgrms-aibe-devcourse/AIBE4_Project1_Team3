@@ -14,6 +14,9 @@ class MapRenderer {
     this.layer = null;
   }
   init(center, zoom = 12) {
+    if (this.map) {
+      this.map.remove();
+    }
     this.map = L.map(this.mapId, { scrollWheelZoom: false }).setView(
       center,
       zoom
@@ -54,6 +57,40 @@ class MapRenderer {
     if (allPts.length)
       this.map.fitBounds(L.latLngBounds(allPts), { padding: [30, 30] });
   }
+
+  //해당 Day선택 시 맵 구성 로직
+  renderSingleDay(dayPlan) {
+    if (!this.map || !this.layer) return;
+    this.layer.clearLayers();
+
+    const latLngs = [];
+    const allPts = [];
+
+    (dayPlan.stops || []).forEach((s, si) => {
+      const latlng = [s.lat, s.lng];
+      latLngs.push(latlng);
+      allPts.push(latlng);
+      L.marker(latlng)
+        .bindPopup(
+          `<b>Day ${dayPlan.day} · ${si + 1}. ${escapeHtml(
+            s.placeName
+          )}</b><br/>${escapeHtml(s.summary || "")}`
+        )
+        .addTo(this.layer);
+    });
+
+    if (latLngs.length >= 2) {
+      L.polyline(latLngs, {
+        color: "#0ea5ff", // Pin color (selected day)
+        weight: 4,
+        opacity: 0.9,
+      }).addTo(this.layer);
+    }
+
+    if (allPts.length) {
+      this.map.fitBounds(L.latLngBounds(allPts), { padding: [30, 30] });
+    }
+  }
 }
 
 class RecommendationRenderer {
@@ -63,12 +100,8 @@ class RecommendationRenderer {
   }
 
   static calculateStopCost(stop) {
-    if (!Array.isArray(stop.costBreakdown))
-      return Number(stop.estimatedCost) || 0;
-    return stop.costBreakdown.reduce(
-      (acc, it) => acc + (Number(it.subtotalKRW) || 0),
-      0
-    );
+    // 백엔드에서 정규화된 estimatedCost를 항상 사용
+    return Number(stop.estimatedCost) || 0;
   }
 
   renderCostBreakdown(stop) {
@@ -91,8 +124,13 @@ class RecommendationRenderer {
             <strong>${escapeHtml(
               item.category || "기타"
             )}</strong>${basis}${conf}<br/>
+<<<<<<< HEAD
             단가: ${currencySymbol}${unit.toLocaleString()} × ${qty} = ${currencySymbol}${subJPY.toLocaleString()}<br/>
             원화: ${formatCurrency(subKRW)}
+=======
+            단가: ¥${unit.toLocaleString()} × ${qty} = ¥${subJPY.toLocaleString()}<br/>
+            원화: ${subKRW === 0 ? "무료" : formatCurrency(subKRW)}
+>>>>>>> dev
           </li>`;
         })
         .join("");
@@ -117,15 +155,52 @@ class RecommendationRenderer {
     return "";
   }
 
-  renderStop(stop, index) {
+  static getMealIcon(category) {
+    const mealIcons = {
+      breakfast: "🍳",
+      lunch: "🍴",
+      dinner: "🍽️",
+      snack: "🍰",
+      cafe: "☕",
+    };
+    return mealIcons[category] || "";
+  }
+
+  static getMealLabel(category) {
+    const mealLabels = {
+      breakfast: "아침",
+      lunch: "점심",
+      dinner: "저녁",
+      snack: "간식",
+      cafe: "카페",
+    };
+    return mealLabels[category] || "";
+  }
+
+  static renderStop(stop, index) {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
-    const cbHTML = this.renderCostBreakdown(stop);
+    const cbHTML = RecommendationRenderer.renderCostBreakdown(stop);
+    const category = stop.category || "";
+    const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(
+      category
+    );
+    const mealIcon = isMeal ? RecommendationRenderer.getMealIcon(category) : "";
+    const mealLabel = isMeal
+      ? RecommendationRenderer.getMealLabel(category)
+      : "";
+    const mealClass = isMeal ? "meal-stop" : "";
 
     return `
-      <li class="stops-row">
+      <li class="stops-row ${mealClass}" data-category="${escapeHtml(
+      category
+    )}">
         <span class="idx">${index + 1}</span>
         <div class="place">
-          <div class="name">${escapeHtml(stop.placeName)}</div>
+          <div class="name">
+            ${mealIcon ? `<span class="meal-icon">${mealIcon}</span>` : ""}
+            ${mealLabel ? `<span class="meal-label">${mealLabel}</span>` : ""}
+            ${escapeHtml(stop.placeName)}
+          </div>
           <div class="sub">${escapeHtml(stop.summary || "")}</div>
           ${
             stop.stopReason
@@ -134,7 +209,9 @@ class RecommendationRenderer {
           }
           ${cbHTML}
         </div>
-        <span class="cost">${stopSum === 0 ? "무료" : formatCurrency(stopSum)}</span>
+        <span class="cost">${
+          stopSum === 0 ? "무료" : formatCurrency(stopSum)
+        }</span>
       </li>`;
   }
 
@@ -175,33 +252,36 @@ class RecommendationRenderer {
   }
 
   calculateDaySums(days) {
-    return days.map((dp) => {
-      return (
-        Number(dp.dayTotalKRW) ||
-        (dp.stops || []).reduce(
-          (a, s) => a + RecommendationRenderer.calculateStopCost(s),
-          0
-        )
-      );
-    });
+    // 실제 화면에 표시되는 stops의 합계를 기준으로 계산
+    return days.map((dp) =>
+      (dp.stops || []).reduce(
+        (sum, s) => sum + (Number(s.estimatedCost) || 0),
+        0
+      )
+    );
   }
 
-  attachCardToggleEvents() {
+  attachCardToggleEvents(dayPlans, map) {
     const cards = this.container.querySelectorAll(".route-card");
-    cards.forEach((card) => {
+    cards.forEach((card, index) => {
       const head = card.querySelector(".route-card__head");
       const body = card.querySelector(".route-card__body");
 
       head.addEventListener("click", () => {
+        const isOpening = body.style.display === "none";
         this.container.querySelectorAll(".route-card__body").forEach((b) => {
           if (b !== body) b.style.display = "none";
         });
-        body.style.display = body.style.display === "none" ? "block" : "none";
+        body.style.display = isOpening ? "block" : "none";
+
+        if (isOpening && dayPlans[index]) {
+          map.renderSingleDay(dayPlans[index]);
+        }
       });
     });
   }
 
-  render(itinerary) {
+  render(itinerary, map) {
     const days = itinerary?.dayPlans || [];
     if (!days.length) {
       this.container.innerHTML = "<p>추천 결과가 없습니다.</p>";
@@ -224,7 +304,7 @@ class RecommendationRenderer {
       )
       .join("");
 
-    this.attachCardToggleEvents();
+    this.attachCardToggleEvents(days, map);
   }
 }
 
@@ -240,8 +320,8 @@ class AppController {
     this.map.init([34.6937, 135.5023], 11);
     if (this.course) {
       console.log(this.course);
-      this.cards.render(this.course);
-      this.map.renderDayPlans(this.course.dayPlans);
+      this.cards.render(course, this.map);
+      this.map.renderDayPlans(course.dayPlans);
       setTimeout(() => this.map.map.invalidateSize(), 0); //지도 깨짐 방지
       this.courseInput.value = JSON.stringify(this.course);
     } else {

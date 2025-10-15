@@ -342,3 +342,67 @@ button:hover {
   color: #333;
   font-size: 0.92rem;
 }
+
+/* Meal Stop Styles */
+.meal-stop {
+  background: #fff8e6 !important;
+  border-left: 3px solid #ff9800 !important;
+}
+
+.meal-stop[data-category="breakfast"] {
+  background: #fff3e0 !important;
+  border-left-color: #ff9800 !important;
+}
+
+.meal-stop[data-category="lunch"] {
+  background: #e8f5e9 !important;
+  border-left-color: #4caf50 !important;
+}
+
+.meal-stop[data-category="dinner"] {
+  background: #fce4ec !important;
+  border-left-color: #e91e63 !important;
+}
+
+.meal-stop[data-category="snack"],
+.meal-stop[data-category="cafe"] {
+  background: #f3e5f5 !important;
+  border-left-color: #9c27b0 !important;
+}
+
+.meal-icon {
+  font-size: 1.2rem;
+  margin-right: 0.4rem;
+}
+
+.meal-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-right: 0.5rem;
+  background: rgba(0, 0, 0, 0.08);
+  color: #333;
+}
+
+.meal-stop[data-category="breakfast"] .meal-label {
+  background: #ff9800;
+  color: #fff;
+}
+
+.meal-stop[data-category="lunch"] .meal-label {
+  background: #4caf50;
+  color: #fff;
+}
+
+.meal-stop[data-category="dinner"] .meal-label {
+  background: #e91e63;
+  color: #fff;
+}
+
+.meal-stop[data-category="snack"] .meal-label,
+.meal-stop[data-category="cafe"] .meal-label {
+  background: #9c27b0;
+  color: #fff;
+}
