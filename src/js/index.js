@@ -151,7 +151,7 @@ async function renderGraph() {
   let apiData;
 
   const cachedData = sessionStorage.getItem("exchangeData");
-  const cacheExpires = sessionStorage.getItem("exchangeDataExpires");
+  const cacheExpires = sessionStorage.getItem("exchangeExpires");
   const now = Date.now();
 
   // 만료 시간을 숫자로 변환 (변환 실패 시 0으로 처리하여 무효화)
@@ -163,7 +163,7 @@ async function renderGraph() {
   } else {
     // 2. 캐시 만료 또는 없음: 실제 API 호출
     try {
-      console.log("API 호출 시작");
+      console.log("환율 API 호출 시작");
       const response = await fetch(API_URL);
       apiData = await response.json();
 
