@@ -304,9 +304,11 @@ class RecommendationRenderer {
   }
 }
 
+const params = new URLSearchParams(window.location.search);
+const draft = params.get("draft");
+
 class AppController {
   constructor() {
-    this.course = JSON.parse(sessionStorage.getItem("reviewCourse"));
     this.map = new MapRenderer("mapContainer");
     this.result = document.getElementById("recommendResult");
     this.cards = new RecommendationRenderer(this.result);
@@ -314,19 +316,53 @@ class AppController {
   }
   init() {
     this.map.init([34.6937, 135.5023], 11);
-    if (this.course) {
-      console.log(this.course);
-      this.courseInput.value = JSON.stringify(this.course);
-      this.cards.render(this.course, this.map);
-      this.map.renderDayPlans(course.dayPlans);
-      setTimeout(() => this.map.map.invalidateSize(), 0);
+
+    if (draft) {
+      const course = JSON.parse(window.localStorage.getItem("reviewCourse"));
+
+      if (course) {
+        console.log(course);
+        this.courseInput.value = JSON.stringify(course);
+        this.cards.render(course, this.map);
+        this.map.renderDayPlans(course.dayPlans);
+        setTimeout(() => this.map.map.invalidateSize(), 0);
+      } else {
+        console.log("no data");
+        return;
+      }
     } else {
-      console.log("no data");
+      const course = JSON.parse(sessionStorage.getItem("reviewCourse"));
+
+      if (course) {
+        console.log(course);
+        this.courseInput.value = JSON.stringify(course);
+        this.cards.render(course, this.map);
+        this.map.renderDayPlans(course.dayPlans);
+        setTimeout(() => this.map.map.invalidateSize(), 0);
+      } else {
+        console.log("no data");
+        return;
+      }
     }
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => new AppController().init());
+
+document.getElementById("reviewSaveBtn").addEventListener("click", async () => {
+  if (
+    confirm(
+      "해당 경로를 임시저장하겠습니까?\n확인을 누르면 경로가 저장되며 리뷰게시판으로 이동합니다."
+    )
+  ) {
+    const c = document.getElementById("course").value;
+
+    window.localStorage.setItem("reviewCourse", c);
+
+    alert("임시저장이 완료되었습니다!");
+    window.location.href = "/src/review.html";
+  }
+});
 
 document.getElementById("reviewForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -353,6 +389,9 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
     const result = await res.json();
 
     if (result.success) {
+      if (draft) {
+        window.localStorage.removeItem("reviewCourse");
+      }
       alert("리뷰가 등록되었습니다!");
       window.location.href = "/src/review.html";
     } else {
