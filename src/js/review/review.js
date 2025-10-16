@@ -107,7 +107,7 @@ if (data) {
 
 // 임시저장된 경로 리뷰하기
 draftBtn.onclick = () => {
-  window.location.href = "/review-form.html?draft=true";
+  window.location.href = "/src/review-form.html?draft=true";
 };
 
 document.addEventListener("DOMContentLoaded", loadPosts);
