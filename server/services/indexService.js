@@ -50,6 +50,7 @@ export async function recommend({
   const end = new Date(endDate);
   // 두 날짜 간의 차이(밀리초)를 일수로 변환 (시작일과 종료일 모두 포함)
   const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  const today = new Date().toISOString().split("T")[0];
 
   const contextDataForPrompt = candidateCountries.map((country) => {
     const rates = exchangeRatesData[country.currency];
@@ -85,6 +86,7 @@ export async function recommend({
       candidateCountries 배열에 없는 국가는 어떤 이유로든 추천하지 마세요.
 
       # 사용자 정보
+      - 조회 시점 (오늘 날짜): ${today}
       - 여행 기간: ${startDate} 부터 ${endDate} 까지
       - 총 예산: ${budget}원(KRW)
       - 1인당 예산: ${(budget / people).toLocaleString()}원 (KRW)
@@ -102,13 +104,15 @@ export async function recommend({
 
       # 수행 규칙 및 논리
       1. 'exchange_rate_trend_6m_avg' 항목과 'exchange_rate_trend_direction' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
-      2. 2. 'exchange_rate_trend_6m_avg', 'exchange_rate_trend_direction'에 나타난 추세와 1년 전 해당 달의 환율 변동을 기반으로 예상 환율을 추정하여 'forecasted_exchange_rate' 항목에 반영하세요.
-      3. 위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비의 범위('per_cost_range')**를 계산하세요. 항공권과 숙소 비용의 변동성을 고려하여 최소값과 최대값을 포함하는 범위로 제시하세요.
+      2. 'exchange_rate_trend_6m_avg', 'exchange_rate_trend_direction'에 나타난 추세와 1년 전 해당 달의 환율 변동을 기반으로 예상 환율을 추정하여 'forecasted_exchange_rate' 항목에 반영하세요.
+      3. 조회 시점('${today}')과 여행 시작일('${startDate}')의 연도와 월이 동일한지 확인하세요. 만약 연도와 월이 모두 같다면, 이는 매우 가까운 미래이므로 환율 예측이 무의미합니다. 이 경우에는 반드시 'forecasted_exchange_rate' 값을 'current_rate' 값과 동일하게 설정해야 합니다. 다른 경우에는 규칙 2번에 따라 예측을 수행하세요.
+      4. 위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비의 범위('per_cost_range')**를 계산하세요. 항공권과 숙소 비용의 변동성을 고려하여 최소값과 최대값을 포함하는 범위로 제시하세요.
           - **계산식:** (추정 항공권 비용) + (추정 1박 숙소 비용 * (${durationDays}-1)) + (조정된 일일 경비 * ${durationDays}) 를 기준으로, 약 15% 내외의 변동폭을 적용하여 범위를 산출하세요.
-      4. 계산된 'per_cost_range'의 최소값이 사용자의 1인당 예산(${(
+      5. 계산된 'per_cost_range'의 최소값이 사용자의 1인당 예산(${(
         budget / people
       ).toLocaleString()}원) 내에 들어오는지 확인하여 '예산 효율성'을 평가하세요.
-      5. 최종적으로 '예상 환율(유리함)', '예산 효율성'을 종합하여 가장 합리적인 상위 3개국을 추천하세요
+          - 예를들어 1200000 ~ 1500000과 같이 표기해주세요.
+      6. 최종적으로 '예상 환율(유리함)', '예산 효율성'을 종합하여 가장 합리적인 상위 3개국을 추천하세요
 
       # 출력 형식
       답변은 반드시 아래와 같은 JSON 형식으로만 제공해주세요. 다른 설명은 붙이지 마세요.
