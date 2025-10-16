@@ -4,9 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>여행 경로 리뷰 작성하기</title>
-    <link rel="stylesheet" href="./css/review/review-form.css" />
     <script src="https://cdn.tailwindcss.com"></script>
-
+    <link rel="stylesheet" href="./css/review/review-form.css" />
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -62,8 +61,17 @@
     </header>
 
     <main>
-      <h2>여행 경로 리뷰 작성</h2>
-      <hr />
+      <h1
+        style="
+          margin-top: 0px;
+          margin-bottom: 10px;
+          font-weight: 600;
+          font-size: 22px;
+        "
+      >
+        여행 경로 리뷰 작성
+      </h1>
+      <hr style="border: 0; border-top: 1px solid #ccc; margin-bottom: 20px" />
 
       <section class="content__grid">
         <div class="panel">
@@ -96,17 +104,21 @@
 
         <div>
           <label>별점</label>
-          <div class="star-rating space-x-4 mx-auto">
-            <input type="radio" id="5-stars" name="rating" value="5" />
-            <label for="5-stars" class="star pr-4">★</label>
-            <input type="radio" id="4-stars" name="rating" value="4" />
-            <label for="4-stars" class="star">★</label>
-            <input type="radio" id="3-stars" name="rating" value="3" />
-            <label for="3-stars" class="star">★</label>
-            <input type="radio" id="2-stars" name="rating" value="2" />
-            <label for="2-stars" class="star">★</label>
-            <input type="radio" id="1-star" name="rating" value="1" required />
-            <label for="1-star" class="star">★</label>
+          <div class="star-rating">
+            <input type="radio" id="star5" name="rating" value="5" />
+            <label for="star5">★</label>
+
+            <input type="radio" id="star4" name="rating" value="4" />
+            <label for="star4">★</label>
+
+            <input type="radio" id="star3" name="rating" value="3" />
+            <label for="star3">★</label>
+
+            <input type="radio" id="star2" name="rating" value="2" />
+            <label for="star2">★</label>
+
+            <input type="radio" id="star1" name="rating" value="1" />
+            <label for="star1">★</label>
           </div>
         </div>
 
@@ -126,8 +138,8 @@
         </div>
 
         <div style="justify-content: flex-end; display: flex">
-          <button id="reviewSaveBtn" type="button">임시저장</button>
-          <button type="submit">등록하기</button>
+          <button id="reviewSaveBtn" type="button" class="btn">임시저장</button>
+          <button type="submit" class="btn">등록하기</button>
         </div>
       </form>
     </main>
