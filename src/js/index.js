@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
-  const apiBaseUrl = "http://localhost:3000";
+  const apiBaseUrl = "https://aibe4-project1-team3.onrender.com";
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
@@ -188,8 +188,7 @@ const currencyMap = {
 
 async function renderGraph() {
   const exchangeRatesData = {};
-  const API_URL = "http://localhost:3000/api/exchange";
-  //const apiData = await response.json();
+  const API_URL = "https://aibe4-project1-team3.onrender.com/api/exchange";
   let apiData;
 
   const cachedData = sessionStorage.getItem("exchangeData");

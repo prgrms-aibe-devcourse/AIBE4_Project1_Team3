@@ -12,8 +12,8 @@
         <h1 class="header__logo">TourRate</h1>
         <nav class="header__nav">
           <ul class="nav__list">
-            <li><a href="/src/index.html">환율 정보</a></li>
-            <li><a href="/src/review.html" class="active">리뷰 게시판</a></li>
+            <li><a href="/index.html">환율 정보</a></li>
+            <li><a href="/review.html" class="active">리뷰 게시판</a></li>
           </ul>
         </nav>
       </div>
@@ -41,10 +41,16 @@
         <tbody id="postsBody"></tbody>
       </table>
 
-      <div style="margin-top: 48px; text-align: center">
-        <button class="prevBtn" id="prev">이전</button>
-        <span id="pageInfo"></span>
-        <button class="nextBtn" id="next">다음</button>
+      <div class="container">
+        <div class="center-item">
+          <button class="prevBtn" id="prev">이전</button>
+          <span id="pageInfo"></span>
+          <button class="nextBtn" id="next">다음</button>
+        </div>
+
+        <button id="draftBtn" class="right-item" hidden>
+          임시저장된 경로 리뷰하기
+        </button>
       </div>
     </main>
 

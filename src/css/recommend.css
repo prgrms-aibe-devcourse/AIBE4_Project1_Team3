@@ -481,18 +481,24 @@ body {
   background: #9c27b0;
   color: #fff;
 }
+
 .reviewBtn {
-  float: left;
-  margin-top: 12px;
-  position: inherit;
-  padding: 8px;
+  margin: 0 0 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 10px;
+  padding-right: 10px;
   background-color: #0b253f;
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  align-self: flex-end;
-  font-size: 1rem;
+}
+
+.panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* Weather Panel Styles */

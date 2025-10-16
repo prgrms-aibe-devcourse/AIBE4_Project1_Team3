@@ -599,18 +599,134 @@ class AppController {
     }
     this.form.addEventListener("submit", (e) => this.handleSubmit(e));
 
-    // sessionStorage에서 city 정보 복원
     this.restoreCityFromStorage();
 
-    // URL 파라미터 확인 및 자동 실행
-    this.checkUrlParams();
+    const hasCache = localStorage.getItem("recommendResult");
+
+    if (hasCache) {
+      console.log("캐시 데이터 감지 — 즉시 복원 실행");
+      this.restoreFromSessionStorage();
+      return;
+    }
+
+    const hasUrlParams = this.checkUrlParams();
+    if (hasUrlParams) {
+      console.log("캐시 없음 — URL 파라미터 기반 자동 검색 실행");
+    } else {
+      console.log("캐시 없음 & URL 파라미터 없음 — 대기 상태");
+    }
   }
 
   restoreCityFromStorage() {
-    const savedCity = sessionStorage.getItem("travelCity");
+    const savedCity = localStorage.getItem("travelCity");
     if (savedCity && this.city && !this.city.value) {
       this.city.value = savedCity;
     }
+  }
+
+  /**
+   * localStorage에서 추천 결과 복원
+   * 새로고침 또는 뒤로가기 후 재진입 시 호출
+   */
+  restoreFromSessionStorage() {
+    try {
+      const savedItinerary = localStorage.getItem("recommendResult");
+      const savedFormData = localStorage.getItem("recommendFormData");
+      const savedWeather = localStorage.getItem("recommendWeather");
+
+      if (!savedItinerary || !savedFormData) {
+        console.log("✅ 캐시에서 불러올 데이터가 없습니다.");
+        return;
+      }
+
+      console.log("✅ 캐시 데이터 감지 — 즉시 렌더링");
+
+      const itinerary = JSON.parse(savedItinerary);
+      const formData = JSON.parse(savedFormData);
+      const weather = savedWeather ? JSON.parse(savedWeather) : null;
+
+      // 로딩 문구 즉시 제거
+      hideLoading(this.loading);
+
+      // 폼에 값 복원
+      if (this.start) this.start.value = formData.startDate;
+      if (this.end) this.end.value = formData.endDate;
+      if (this.people) this.people.value = formData.people;
+      if (this.budget)
+        this.budget.value = Number(formData.budget).toLocaleString("ko-KR");
+      if (this.city) this.city.value = formData.city;
+
+      // 지도 초기화
+      this.map.init([34.6937, 135.5023], 11);
+
+      // 추천 결과 렌더링
+      this.cards.render(itinerary, this.map);
+      this.map.renderDayPlans(itinerary.dayPlans);
+
+      // 오른쪽 패널 표시
+      this.rightPanel.style.display = null;
+      setTimeout(() => this.map.map.invalidateSize(), 0);
+
+      // 날씨 정보 복원
+      if (weather) {
+        this.weather.render(weather);
+      }
+
+      // 리뷰 버튼 표시 및 이벤트 설정
+      this.reviewBtn.hidden = false;
+      this.reviewBtn.addEventListener("click", () => {
+        sessionStorage.setItem("reviewCourse", JSON.stringify(itinerary));
+        window.location.href = "/review-form.html";
+      });
+
+      console.log("✅ 캐시 복원 완료");
+    } catch (err) {
+      console.error(" 캐시 복원 오류:", err);
+      // 오류 발생 시 저장된 데이터 삭제
+      localStorage.removeItem("recommendResult");
+      localStorage.removeItem("recommendFormData");
+      localStorage.removeItem("recommendWeather");
+    }
+  }
+
+  /**
+   * 추천 결과를 localStorage에 저장
+   */
+  saveToSessionStorage(itinerary, formData, weather = null) {
+    try {
+      localStorage.setItem("recommendResult", JSON.stringify(itinerary));
+      localStorage.setItem("recommendFormData", JSON.stringify(formData));
+      if (weather) {
+        localStorage.setItem("recommendWeather", JSON.stringify(weather));
+      }
+      console.log("✅ localStorage에 캐시 저장 완료");
+    } catch (err) {
+      console.error("localStorage 저장 오류:", err);
+    }
+  }
+
+  /**
+   * 재검색 시 기존 결과 및 UI 초기화
+   */
+  clearPreviousResults() {
+    // 결과 영역 초기화
+    this.result.innerHTML = "";
+
+    // 오른쪽 패널 숨기기
+    this.rightPanel.style.display = "none";
+
+    // 리뷰 버튼 숨기기
+    this.reviewBtn.hidden = true;
+
+    // 지도 초기화 (이전 레이어 제거)
+    if (this.map.map) {
+      this.map.layer.clearLayers();
+    }
+
+    // 날씨 정보 초기화
+    this.weatherResults.innerHTML = "";
+
+    console.log("[초기화] 기존 검색 결과 제거 완료");
   }
 
   checkUrlParams() {
@@ -630,15 +746,24 @@ class AppController {
       if (this.budget)
         this.budget.value = Number(budget).toLocaleString("ko-KR");
 
-      // city 정보를 sessionStorage에 저장
-      sessionStorage.setItem("travelCity", city);
+      // city 정보를 localStorage에 저장
+      localStorage.setItem("travelCity", city);
 
       // 자동으로 검색 실행
       this.autoSubmit(city, startDate, endDate, people, Number(budget));
+      return true; // URL 파라미터가 있음을 반환
     }
+    return false; // URL 파라미터가 없음을 반환
   }
 
   async autoSubmit(city, startDate, endDate, people, budgetNum) {
+    // 기존 결과 초기화
+    this.clearPreviousResults();
+
+    localStorage.removeItem("recommendResult");
+    localStorage.removeItem("recommendFormData");
+    localStorage.removeItem("recommendWeather");
+
     showLoading(this.loading);
     this.rightPanel.style.display = "none";
 
@@ -679,7 +804,17 @@ class AppController {
       const weatherLat = firstStop?.lat || 34.6937;
       const weatherLng = firstStop?.lng || 135.5023;
 
-      this.fetchAndRenderWeather({
+      // 폼 데이터 저장 (세션 저장용)
+      const formData = {
+        city: finalItin.city,
+        startDate,
+        endDate,
+        people,
+        budget: budgetNum,
+      };
+
+      // 날씨 정보 가져오기 및 세션 저장
+      const weatherData = await this.fetchAndRenderWeather({
         city: finalItin.city,
         lat: weatherLat,
         lng: weatherLng,
@@ -687,10 +822,13 @@ class AppController {
         averageWeather: itinerary.averageWeather,
       });
 
+      // 추천 결과를 sessionStorage에 저장
+      this.saveToSessionStorage(finalItin, formData, weatherData);
+
       this.reviewBtn.hidden = false;
       this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
-        window.location.href = "/src/review-form.html";
+        window.location.href = "/review-form.html";
       });
     } catch (err) {
       console.error("AI 추천 오류:", err);
@@ -715,6 +853,7 @@ class AppController {
    * 날씨 정보를 가져와서 화면에 렌더링합니다.
    * - 5일 이내: OpenWeatherMap 실시간 예보
    * - 5일 이후: AI가 제공한 평균 날씨 사용
+   * @returns {Promise<Object|null>} 날씨 데이터 (세션 저장용)
    */
   async fetchAndRenderWeather({ city, lat, lng, startDate, averageWeather }) {
     try {
@@ -724,7 +863,7 @@ class AppController {
       travelDate.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil((travelDate - today) / (1000 * 60 * 60 * 24));
 
-      const apiBaseUrl = "http://localhost:3000";
+      const apiBaseUrl = "https://aibe4-project1-team3.onrender.com";
 
       console.log(`[날씨 로직] ${city}, 여행까지 ${diffDays}일`);
 
@@ -748,48 +887,59 @@ class AppController {
         const weatherData = await response.json();
         this.weather.render(weatherData);
         console.log(`[실시간 날씨 표시] ${city}`);
-        return;
+        return weatherData; // 날씨 데이터 반환
       }
 
       // 5일 이후: AI가 제공한 평균 날씨 사용
       if (averageWeather) {
-        this.weather.render({
+        const weatherData = {
           ...averageWeather,
           city,
           isAverage: true,
           isRealTime: false,
-        });
+        };
+        this.weather.render(weatherData);
         console.log(`[AI 평균 날씨 표시] ${city} - ${averageWeather.month}월`);
+        return weatherData; // 날씨 데이터 반환
       } else {
         this.weather.showError("날씨 정보를 불러올 수 없습니다.");
+        return null;
       }
     } catch (err) {
       console.error("날씨 정보 로드 오류:", err);
 
       // 실시간 날씨 실패 시 AI 평균 날씨로 폴백
       if (averageWeather) {
-        this.weather.render({
+        const weatherData = {
           ...averageWeather,
           city,
           isAverage: true,
           isRealTime: false,
-        });
+        };
+        this.weather.render(weatherData);
         console.log(`[실시간 실패, AI 평균 날씨 표시] ${city}`);
+        return weatherData; // 날씨 데이터 반환
       } else {
         this.weather.showError("날씨 정보를 불러올 수 없습니다.");
+        return null;
       }
     }
   }
 
   async handleSubmit(e) {
     e.preventDefault();
+
+    localStorage.removeItem("recommendResult");
+    localStorage.removeItem("recommendFormData");
+    localStorage.removeItem("recommendWeather");
+
     const start = this.start?.value;
     const end = this.end?.value;
     const people = (this.people?.value || "").trim();
     const budgetNum = Number(stripDigits(this.budget?.value || ""));
     const city = (
       this.city?.value ||
-      sessionStorage.getItem("travelCity") ||
+      localStorage.getItem("travelCity") ||
       "오사카"
     ).trim();
     const peopleNum = parseInt(people, 10);
@@ -811,8 +961,11 @@ class AppController {
       return;
     }
 
-    // city 정보를 sessionStorage에 저장
-    sessionStorage.setItem("travelCity", city);
+    // city 정보를 localStorage에 저장
+    localStorage.setItem("travelCity", city);
+
+    // 기존 결과 초기화 (재검색 시)
+    this.clearPreviousResults();
 
     showLoading(this.loading);
     this.rightPanel.style.display = "none";
@@ -854,7 +1007,17 @@ class AppController {
       const weatherLat = firstStop?.lat || 34.6937; // 기본값: 오사카
       const weatherLng = firstStop?.lng || 135.5023;
 
-      this.fetchAndRenderWeather({
+      // 폼 데이터 저장 (세션 저장용)
+      const formData = {
+        city: finalItin.city,
+        startDate: start,
+        endDate: end,
+        people,
+        budget: budgetNum,
+      };
+
+      // 날씨 정보 가져오기 및 세션 저장
+      const weatherData = await this.fetchAndRenderWeather({
         city: finalItin.city, // AI가 추천한 최종 도시명
         lat: weatherLat, // 첫 번째 장소의 위도
         lng: weatherLng, // 첫 번째 장소의 경도
@@ -862,11 +1025,14 @@ class AppController {
         averageWeather: itinerary.averageWeather, // AI가 제공한 평균 날씨
       });
 
+      // 추천 결과를 sessionStorage에 저장
+      this.saveToSessionStorage(finalItin, formData, weatherData);
+
       // 리뷰 버튼 표시 및 이벤트 리스너 설정
       this.reviewBtn.hidden = false;
       this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
-        window.location.href = "/src/review-form.html";
+        window.location.href = "/review-form.html";
       });
     } catch (err) {
       console.error("AI 추천 오류:", err);

@@ -24,8 +24,8 @@
         <h1 class="header__logo">TourRate</h1>
         <nav class="header__nav">
           <ul class="nav__list">
-            <li><a href="/src/index.html">환율 정보</a></li>
-            <li><a href="/src/review.html">리뷰 게시판</a></li>
+            <li><a href="/index.html">환율 정보</a></li>
+            <li><a href="/review.html">리뷰 게시판</a></li>
           </ul>
         </nav>
       </div>
@@ -54,8 +54,14 @@
         </div>
 
         <div>
-          <label>비밀번호</label>
-          <input type="password" name="password" maxlength="100" required />
+          <label>비밀번호 (숫자 4자리)</label>
+          <input
+            type="password"
+            name="password"
+            onkeypress="return checkNumber(event)"
+            maxlength="4"
+            required
+          />
         </div>
 
         <div>
@@ -74,12 +80,25 @@
           </div>
         </div>
 
+        <script>
+          function checkNumber(event) {
+            if (event.key >= 0 && event.key <= 9) {
+              return true;
+            }
+
+            return false;
+          }
+        </script>
+
         <div>
           <label>내용</label>
           <textarea name="content" required></textarea>
         </div>
 
-        <button type="submit">등록하기</button>
+        <div style="justify-content: flex-end; display: flex">
+          <button id="reviewSaveBtn" type="button">임시저장</button>
+          <button type="submit">등록하기</button>
+        </div>
       </form>
     </main>
 
