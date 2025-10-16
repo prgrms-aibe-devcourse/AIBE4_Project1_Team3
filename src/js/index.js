@@ -129,14 +129,18 @@ function displayResults(recommendations) {
     const button = card.querySelector("button");
     if (button && recommendations[index]) {
       button.onclick = () => {
-        const params = new URLSearchParams({
+        // localStorage에 검색 조건 저장
+        const searchData = {
           city: recommendations[index].country,
           startDate: startDate,
           endDate: endDate,
           people: people,
           budget: budget,
-        });
-        window.location.href = `recommend.html?${params.toString()}`;
+        };
+        localStorage.setItem("travelSearchData", JSON.stringify(searchData));
+
+        // URL 파라미터 없이 recommend.html로 이동
+        window.location.href = "recommend.html";
       };
     }
   });
