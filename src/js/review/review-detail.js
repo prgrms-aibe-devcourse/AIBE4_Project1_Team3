@@ -315,7 +315,7 @@ class AppController {
     this.cards = new RecommendationRenderer(this.result);
   }
   async init() {
-    const url = "http://localhost:3000";
+    const url = "https://aibe4-project1-team3.onrender.com";
     const res = await fetch(url + `/api/review/receive/${reviewId}`);
     const data = await res.json();
 
@@ -353,7 +353,7 @@ document.getElementById("deleteForm").addEventListener("submit", async (e) => {
   if (pwd === pwdInput) {
     // 서버에 전송
     const response = await fetch(
-      `http://localhost:3000/api/review/delete/${reviewId}`,
+      `https://aibe4-project1-team3.onrender.com/api/review/delete/${reviewId}`,
       {
         method: "DELETE",
         headers: {
