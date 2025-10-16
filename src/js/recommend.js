@@ -346,7 +346,7 @@ class RecommendationRenderer {
           ${cbHTML}
         </div>
         <span class="cost">${
-          stopSum === 0 ? "무료" : formatCurrency(stopSum)
+          stopSum === 0 ? "무료" : `₩${stopSum.toLocaleString("ko-KR")}`
         }</span>
       </li>`;
   }
@@ -430,6 +430,14 @@ class RecommendationRenderer {
       this.city = itinerary.city;
     }
 
+    // 렌더링 전에 현재 열려있는 카드들의 상태 저장
+    const openStates = [];
+    const existingCards = this.container.querySelectorAll(".route-card");
+    existingCards.forEach((card, index) => {
+      const body = card.querySelector(".route-card__body");
+      openStates[index] = body && body.style.display !== "none";
+    });
+
     const daySums = this.calculateDaySums(days);
     const avgDaily = daySums.length
       ? Math.round(daySums.reduce((a, b) => a + b, 0) / daySums.length)
@@ -440,6 +448,15 @@ class RecommendationRenderer {
         this.renderDayCard(dp, daySums[idx] || 0, avgDaily, city)
       )
       .join("");
+
+    // 렌더링 후에 이전에 열려있던 카드들의 상태 복원
+    const newCards = this.container.querySelectorAll(".route-card");
+    newCards.forEach((card, index) => {
+      const body = card.querySelector(".route-card__body");
+      if (body && openStates[index]) {
+        body.style.display = "block";
+      }
+    });
 
     this.attachCardToggleEvents(days, map);
   }
@@ -644,11 +661,11 @@ class AppController {
       const savedWeather = localStorage.getItem("recommendWeather");
 
       if (!savedItinerary || !savedFormData) {
-        console.log("✅ 캐시에서 불러올 데이터가 없습니다.");
+        console.log("캐시에서 불러올 데이터가 없습니다.");
         return;
       }
 
-      console.log("✅ 캐시 데이터 감지 — 즉시 렌더링");
+      console.log("캐시 데이터 감지 — 즉시 렌더링");
 
       const itinerary = JSON.parse(savedItinerary);
       const formData = JSON.parse(savedFormData);
@@ -688,7 +705,7 @@ class AppController {
         window.location.href = "/review-form.html";
       });
 
-      console.log("✅ 캐시 복원 완료");
+      console.log("캐시 복원 완료");
     } catch (err) {
       console.error(" 캐시 복원 오류:", err);
       // 오류 발생 시 저장된 데이터 삭제
@@ -708,7 +725,7 @@ class AppController {
       if (weather) {
         localStorage.setItem("recommendWeather", JSON.stringify(weather));
       }
-      console.log("✅ localStorage에 캐시 저장 완료");
+      console.log("localStorage에 캐시 저장 완료");
     } catch (err) {
       console.error("localStorage 저장 오류:", err);
     }
@@ -927,7 +944,7 @@ class AppController {
           this.cards.render(displayData, this.map);
           this.map.renderDayPlans(displayData.dayPlans);
 
-          console.log(`✅ Day${dayNum} 일정 표시 완료`);
+          console.log(` Day${dayNum} 일정 표시 완료`);
         }
       }
 
@@ -989,7 +1006,7 @@ class AppController {
           window.location.href = "/review-form.html";
         });
 
-        console.log("✅ 5일+ 나머지 일정 로딩 완료");
+        console.log("5일+ 나머지 일정 로딩 완료");
       }
     } catch (err) {
       console.error("AI 추천 오류:", err);
@@ -1219,7 +1236,7 @@ class AppController {
           window.location.href = "/review-form.html";
         });
 
-        console.log("✅ 순차 로딩 완료");
+        console.log("순차 로딩 완료");
         return;
       }
 
@@ -1273,7 +1290,7 @@ class AppController {
           this.cards.render(displayData, this.map);
           this.map.renderDayPlans(displayData.dayPlans);
 
-          console.log(`✅ Day${dayNum} 일정 표시 완료`);
+          console.log(`Day${dayNum} 일정 표시 완료`);
         }
       }
 
@@ -1337,7 +1354,7 @@ class AppController {
         window.location.href = "/review-form.html";
       });
 
-      console.log("✅ 5일+ 순차+나머지 로딩 완료");
+      console.log("5일+ 순차+나머지 로딩 완료");
     } catch (err) {
       console.error("AI 추천 오류:", err);
 
