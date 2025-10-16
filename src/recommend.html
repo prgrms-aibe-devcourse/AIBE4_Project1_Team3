@@ -96,8 +96,15 @@
           <div id="recommendResult" class="result"></div>
         </div>
 
-        <div class="panel panel--map" hidden>
-          <div id="mapContainer" class="map"></div>
+        <div class="content__right" id="rightPanel" style="display: none;">
+          <div class="panel panel--map">
+            <div id="mapContainer" class="map"></div>
+          </div>
+
+          <div id="weatherPanel" class="panel panel--weather">
+            <h3 class="panel__title">🌤️ 날씨 정보</h3>
+            <div id="weatherResults"></div>
+          </div>
         </div>
       </section>
       <button id="reviewBtn" class="reviewBtn" hidden>
