@@ -63,7 +63,7 @@ function displayResults(recommendations) {
   const recommendationGrid = document.getElementById("recommendation-grid");
   recommendationGrid.classList.remove("hidden");
 
-  const form = document.querySelector('form');
+  const form = document.querySelector("form");
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
   const budget = form.elements.budget.value.replace(/,/g, "");
@@ -77,14 +77,14 @@ function displayResults(recommendations) {
     document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
       rec.forecasted_exchange_rate.toLocaleString("ko-KR");
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
-    document.getElementById(`per_cost-${rank}`).innerText =
-      rec.per_cost.toLocaleString("ko-KR") + "원";
+    document.getElementById(`per_cost_range-${rank}`).innerText =
+      rec.per_cost_range.toLocaleString("ko-KR") + "원";
   });
 
   // 추천 루트 보기 버튼에 클릭 이벤트 추가
-  const cards = document.querySelectorAll('#recommendation-grid > div');
+  const cards = document.querySelectorAll("#recommendation-grid > div");
   cards.forEach((card, index) => {
-    const button = card.querySelector('button');
+    const button = card.querySelector("button");
     if (button && recommendations[index]) {
       button.onclick = () => {
         const params = new URLSearchParams({
@@ -92,7 +92,7 @@ function displayResults(recommendations) {
           startDate: startDate,
           endDate: endDate,
           people: people,
-          budget: budget
+          budget: budget,
         });
         window.location.href = `recommend.html?${params.toString()}`;
       };
