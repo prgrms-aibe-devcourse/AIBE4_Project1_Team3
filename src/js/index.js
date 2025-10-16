@@ -111,7 +111,7 @@ function displayResults(recommendations) {
     document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
       rec.forecasted_exchange_rate.toLocaleString("ko-KR");
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
-    document.getElementById(`per_cost_range-${rank}`).innerText =
+    document.getElementById(`per-cost-range-${rank}`).innerText =
       rec.per_cost_range.toLocaleString("ko-KR") + "원";
 
     const trendEl = document.getElementById(`trend-${rank}`);
