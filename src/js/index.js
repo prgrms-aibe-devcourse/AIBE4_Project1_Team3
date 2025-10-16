@@ -36,12 +36,12 @@ window.handleFormSubmit = async function (event) {
   const budget = form.elements.budget.value.replace(/,/g, "");
   const people = form.elements.people.value;
 
-  const resultsDiv = document.getElementById("results-container");
+  const resultsDiv = document.getElementById("resultsContainer");
 
-  let loadingP = document.getElementById("loading-message");
+  let loadingP = document.getElementById("loadingMessage");
   if (!loadingP) {
     loadingP = document.createElement("p");
-    loadingP.id = "loading-message";
+    loadingP.id = "loadingMessage";
     loadingP.className = "text-center";
     resultsDiv.prepend(loadingP);
   }
@@ -91,10 +91,10 @@ function trendColor(rateChange) {
 }
 
 function displayResults(recommendations) {
-  const loadingP = document.getElementById("loading-message");
+  const loadingP = document.getElementById("loadingMessage");
   if (loadingP) loadingP.classList.add("hidden");
 
-  const recommendationGrid = document.getElementById("recommendation-grid");
+  const recommendationGrid = document.getElementById("recommendationGrid");
   recommendationGrid.classList.remove("hidden");
 
   const form = document.querySelector("form");
@@ -105,16 +105,16 @@ function displayResults(recommendations) {
 
   recommendations.forEach((rec, index) => {
     const rank = index + 1;
-    document.getElementById(`country-${rank}`).innerText = rec.country;
-    document.getElementById(`current-rate-${rank}`).innerText =
+    document.getElementById(`country${rank}`).innerText = rec.country;
+    document.getElementById(`currentRate${rank}`).innerText =
       rec.current_rate.toLocaleString("ko-KR");
-    document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
+    document.getElementById(`forecastedExchangeRate${rank}`).innerText =
       rec.forecasted_exchange_rate.toLocaleString("ko-KR");
-    document.getElementById(`reason-${rank}`).innerText = rec.reason;
-    document.getElementById(`per-cost-range-${rank}`).innerText =
+    document.getElementById(`reason${rank}`).innerText = rec.reason;
+    document.getElementById(`perCostRange-${rank}`).innerText =
       rec.per_cost_range.toLocaleString("ko-KR") + "원";
 
-    const trendEl = document.getElementById(`trend-${rank}`);
+    const trendEl = document.getElementById(`trend${rank}`);
     const rateChange = rec.trend.replace("%", "");
     trendEl.innerText = `${rateChange > 0 ? "+" : ""}${rec.trend}`;
     let trendColorClass;
@@ -124,7 +124,7 @@ function displayResults(recommendations) {
   });
 
   // 추천 루트 보기 버튼에 클릭 이벤트 추가
-  const cards = document.querySelectorAll("#recommendation-grid > div");
+  const cards = document.querySelectorAll("#recommendationGrid > div");
   cards.forEach((card, index) => {
     const button = card.querySelector("button");
     if (button && recommendations[index]) {
@@ -238,7 +238,7 @@ async function renderGraph() {
   const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
   console.log(apiData);
-  const containerGraph = document.querySelector("#chart-grid");
+  const containerGraph = document.querySelector("#chartGrid");
   Object.keys(currencyMap).forEach((code) => {
     const countryInfo = currencyMap[code];
     const rateData = currencyData[code];

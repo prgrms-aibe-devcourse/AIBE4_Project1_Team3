@@ -169,7 +169,7 @@
                 <input
                   type="text"
                   name="budget"
-                  id="budget-input"
+                  id="budgetInput"
                   placeholder="1,000,000"
                   oninput="formatBudget(this)"
                   class="font-semibold w-full max-w-[120px] p-1 rounded border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900"
@@ -214,16 +214,16 @@
     </header>
 
     <main class="pt-32 pb-16 container mx-auto px-4">
-      <div id="results-container">
+      <div id="resultsContainer">
         <div class="text-center mb-12">
           <h2 class="text-3xl font-bold">지금 여행하기 좋은 나라</h2>
           <p class="text-gray-500 mt-2">
             환율이 하락 추세인 국가들을 확인하세요
           </p>
-          <div id="loading-message" class="text-center hidden"></div>
+          <div id="loadingMessage" class="text-center hidden"></div>
         </div>
         <div
-          id="recommendation-grid"
+          id="recommendationGrid"
           class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           <div
@@ -233,11 +233,11 @@
               <div>
                 <div class="flex justify-between items-center">
                   <h3
-                    id="country-1"
+                    id="country1"
                     class="text-xl font-bold text-indigo-600 mb-4"
                   ></h3>
                   <div
-                    id="trend-1"
+                    id="trend1"
                     class="text-xs font-semibold px-2.5 py-1 rounded-full"
                   ></div>
                 </div>
@@ -262,7 +262,7 @@
                       현재 환율
                     </p>
                     <span
-                      id="current-rate-1"
+                      id="currentRate1"
                       class="font-bold text-gray-800"
                     ></span>
                   </div>
@@ -286,7 +286,7 @@
                       예측 환율
                     </p>
                     <span
-                      id="forecasted_exchange_rate-1"
+                      id="forecastedExchangeRate1"
                       class="font-bold text-gray-800"
                     ></span>
                   </div>
@@ -312,7 +312,7 @@
                       1인 예상 경비
                     </p>
                     <span
-                      id="per-cost-range-1"
+                      id="perCostRange1"
                       class="font-extrabold text-indigo-700 text-base"
                     ></span>
                   </div>
@@ -338,7 +338,7 @@
                       추천 이유
                     </p>
                     <span
-                      id="reason-1"
+                      id="reason1"
                       class="text-gray-700 leading-relaxed block"
                     ></span>
                   </div>
@@ -358,11 +358,11 @@
               <div>
                 <div class="flex justify-between items-center">
                   <h3
-                    id="country-2"
+                    id="country2"
                     class="text-xl font-bold text-indigo-600 mb-4"
                   ></h3>
                   <div
-                    id="trend-2"
+                    id="trend2"
                     class="text-xs font-semibold px-2.5 py-1 rounded-full"
                   ></div>
                 </div>
@@ -387,7 +387,7 @@
                       현재 환율
                     </p>
                     <span
-                      id="current-rate-2"
+                      id="currentRate2"
                       class="font-bold text-gray-800"
                     ></span>
                   </div>
@@ -411,7 +411,7 @@
                       예측 환율
                     </p>
                     <span
-                      id="forecasted_exchange_rate-2"
+                      id="forecastedExchangeRate2"
                       class="font-bold text-gray-800"
                     ></span>
                   </div>
@@ -437,7 +437,7 @@
                       1인 예상 경비
                     </p>
                     <span
-                      id="per-cost-range-2"
+                      id="perCostRange2"
                       class="font-extrabold text-indigo-700 text-base"
                     ></span>
                   </div>
@@ -463,7 +463,7 @@
                       추천 이유
                     </p>
                     <span
-                      id="reason-2"
+                      id="reason2"
                       class="text-gray-700 leading-relaxed block"
                     ></span>
                   </div>
@@ -483,11 +483,11 @@
               <div>
                 <div class="flex justify-between items-center">
                   <h3
-                    id="country-3"
+                    id="country3"
                     class="text-xl font-bold text-indigo-600 mb-4"
                   ></h3>
                   <div
-                    id="trend-3"
+                    id="trend3"
                     class="text-xs font-semibold px-2.5 py-1 rounded-full"
                   ></div>
                 </div>
@@ -512,7 +512,7 @@
                       현재 환율
                     </p>
                     <span
-                      id="current-rate-3"
+                      id="currentRate3"
                       class="font-bold text-gray-800"
                     ></span>
                   </div>
@@ -536,7 +536,7 @@
                       예측 환율
                     </p>
                     <span
-                      id="forecasted_exchange_rate-3"
+                      id="forecastedExchangeRate3"
                       class="font-bold text-gray-800"
                     ></span>
                   </div>
@@ -562,7 +562,7 @@
                       1인 예상 경비
                     </p>
                     <span
-                      id="per-cost-range-3"
+                      id="perCostRange3"
                       class="font-extrabold text-indigo-700 text-base"
                     ></span>
                   </div>
@@ -588,7 +588,7 @@
                       추천 이유
                     </p>
                     <span
-                      id="reason-3"
+                      id="reason3"
                       class="text-gray-700 leading-relaxed block"
                     ></span>
                   </div>
@@ -604,7 +604,7 @@
         </div>
       </div>
       <div
-        id="chart-grid"
+        id="chartGrid"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
       ></div>
     </main>
