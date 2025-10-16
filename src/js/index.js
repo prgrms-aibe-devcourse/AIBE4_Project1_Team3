@@ -129,6 +129,11 @@ function displayResults(recommendations) {
     const button = card.querySelector("button");
     if (button && recommendations[index]) {
       button.onclick = () => {
+        // 기존 캐시 클리어
+        localStorage.removeItem("recommendResult");
+        localStorage.removeItem("recommendFormData");
+        localStorage.removeItem("recommendWeather");
+
         // localStorage에 검색 조건 저장
         const searchData = {
           city: recommendations[index].country,
