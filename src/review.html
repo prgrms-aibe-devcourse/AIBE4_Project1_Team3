@@ -5,11 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>리뷰 게시판</title>
     <link rel="stylesheet" href="./css/review/review.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="favicon/favicon-16x16.png"
+    />
+    <link rel="manifest" href="favicon/site.webmanifest" />
   </head>
   <body>
     <header class="header header--dark">
       <div class="header__inner">
-        <h1 class="header__logo">TourRate</h1>
+        <a href="index.html" class="flex items-center space-x-2">
+          <img
+            src="image/logo.png"
+            alt="TourRate Logo"
+            class="w-10 h-10 object-contain transition-all duration-300"
+          />
+          <span
+            class="text-2xl font-bold text-white transition-colors duration-300 hidden sm:block"
+          >
+            TourRate
+          </span>
+        </a>
         <nav class="header__nav">
           <ul class="nav__list">
             <li><a href="/index.html">환율 정보</a></li>
@@ -41,10 +71,16 @@
         <tbody id="postsBody"></tbody>
       </table>
 
-      <div style="margin-top: 48px; text-align: center">
-        <button class="prevBtn" id="prev">이전</button>
-        <span id="pageInfo"></span>
-        <button class="nextBtn" id="next">다음</button>
+      <div class="container">
+        <div class="center-item">
+          <button class="prevBtn" id="prev">이전</button>
+          <span id="pageInfo"></span>
+          <button class="nextBtn" id="next">다음</button>
+        </div>
+
+        <button id="draftBtn" class="right-item" hidden>
+          임시저장된 경로 리뷰하기
+        </button>
       </div>
     </main>
 

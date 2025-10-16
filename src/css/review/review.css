@@ -127,3 +127,36 @@ th:nth-child(3) {
   color: #fff;
   text-decoration: underline;
 }
+
+.container {
+  margin-top: 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 15px;
+}
+
+.center-item {
+  /* 자동으로 가운데 정렬됨 */
+}
+
+.right-item {
+  position: absolute;
+  right: 15px;
+  margin-left: auto;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 10px;
+  padding-right: 10px;
+  background-color: #0b253f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}

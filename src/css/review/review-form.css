@@ -64,18 +64,6 @@ main {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-h2 {
-  margin-top: 0px;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-hr {
-  border: 0;
-  border-top: 1px solid #ccc;
-  margin-bottom: 30px;
-}
-
 .route-container {
   display: flex;
   justify-content: space-between;
@@ -114,23 +102,30 @@ label {
 }
 
 input[type="text"],
-input[type="password"],
-textarea {
-  width: 98.5%;
+input[type="password"] {
+  width: 100%;
   padding: 10px;
   border: 1px solid #acacac;
   border-radius: 6px;
   font-size: 0.95rem;
 }
 
-textarea {
-  height: 100px;
+.content-input {
+  width: 100%;
+  padding: 10px;
+  height: 150px;
   resize: none;
+  border: 1px solid #acacac;
+  border-radius: 6px;
+  font-size: 0.95rem;
 }
 
-button {
-  width: 120px;
-  padding: 10px;
+.btn {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-left: 20px;
   background-color: #0b253f;
   color: white;
   border: none;
@@ -145,36 +140,37 @@ button:hover {
 }
 
 .star-rating {
-  display: flex;
-  flex-direction: row-reverse;
-  font-size: 2.25rem;
-  line-height: 2.5rem;
-  justify-content: space-around;
-  padding: 0 0.2em;
-  text-align: center;
-  width: 5em;
+  display: flex !important;
+  flex-direction: row-reverse !important;
+  font-size: 2.25rem !important;
+  line-height: 2.5rem !important;
+  justify-content: flex-end !important;
+  padding: 0 0.2em !important;
+  text-align: center !important;
+  width: 5em !important;
+  gap: 0 !important; /* Tailwind가 추가할 수 있는 gap 제거 */
 }
 
 .star-rating input {
-  display: none;
+  display: none !important;
 }
 
 .star-rating label {
-  -webkit-text-fill-color: transparent; /* Will override color (regardless of order) */
-  -webkit-text-stroke-width: 2.3px;
-  -webkit-text-stroke-color: #2b2a29;
-  cursor: pointer;
+  -webkit-text-fill-color: transparent !important;
+  -webkit-text-stroke-width: 2.3px !important;
+  -webkit-text-stroke-color: #2b2a29 !important;
+  cursor: pointer !important;
+  margin: 0 !important; /* Tailwind reset 방지 */
 }
 
 .star-rating :checked ~ label {
-  -webkit-text-fill-color: gold;
+  -webkit-text-fill-color: gold !important;
 }
 
 .star-rating label:hover,
 .star-rating label:hover ~ label {
-  -webkit-text-fill-color: #fff58c;
+  -webkit-text-fill-color: #fff58c !important;
 }
-
 .content__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

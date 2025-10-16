@@ -37,7 +37,7 @@ async function loadPosts() {
 
 // 게시글 클릭 시 상세페이지로 이동
 function goDetail(id) {
-  window.location.href = `/src/review-detail.html?id=${id}`;
+  window.location.href = `/review-detail.html?id=${id}`;
 }
 
 // 게시글 정렬
@@ -97,5 +97,17 @@ function formatDate(dateString) {
       .replace(/\.$/g, ""); // 일부 브라우저에서 뒤에 . 붙는 것 제거
   }
 }
+
+const draftBtn = document.getElementById("draftBtn");
+const data = window.localStorage.getItem("reviewCourse");
+
+if (data) {
+  draftBtn.hidden = false;
+}
+
+// 임시저장된 경로 리뷰하기
+draftBtn.onclick = () => {
+  window.location.href = "/review-form.html?draft=true";
+};
 
 document.addEventListener("DOMContentLoaded", loadPosts);
