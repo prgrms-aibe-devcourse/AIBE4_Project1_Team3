@@ -151,6 +151,7 @@ async function renderGraph() {
       historical: rateData
         .slice(0, rateData.length - 1)
         .map((value) => (value === null || value === undefined ? 0 : value)),
+      trend: trendText,
     };
 
     let trendColorClass;

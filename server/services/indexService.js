@@ -8,7 +8,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 const candidateCountries = [
   { name: "중국", currency: "CNH" },
-  { name: "프랑스", currency: "EUR" },
+  { name: "유럽", currency: "EUR" },
   { name: "영국", currency: "GBP" },
   { name: "일본", currency: "JPY100" },
   { name: "태국", currency: "THB" },
@@ -24,19 +24,9 @@ const currencyUnitMap = {
   USD: 1, // 미국 달러 — 1단위
 };
 
-function analyzeRateTrend(currentRate, historicalRates) {
-  if (!historicalRates || historicalRates.length === 0) {
-    return "N/A";
-  }
+function analyzeRateTrend(trend) {
+  const trendPercentage = parseFloat(trend);
 
-  // 1. 과거 6개월 환율의 평균을 계산
-  const sum = historicalRates.reduce((acc, rate) => acc + rate, 0);
-  const average = sum / historicalRates.length;
-
-  // 2. 평균 대비 현재 환율의 변동률 계산(변화율 공식)
-  const trendPercentage = ((currentRate - average) / average) * 100;
-
-  // 3. 추세 판단 (원화 기준)
   let trendDirection = "";
   if (trendPercentage < -1) {
     trendDirection = "약세/유리"; // 해당 통화가치가 하락 -> 여행자에게 유리
@@ -46,7 +36,7 @@ function analyzeRateTrend(currentRate, historicalRates) {
     trendDirection = "보합세";
   }
 
-  return `${trendPercentage.toFixed(2)}% (${trendDirection})`;
+  return trendDirection;
 }
 
 export async function recommend({
@@ -64,7 +54,8 @@ export async function recommend({
   const contextDataForPrompt = candidateCountries.map((country) => {
     const rates = exchangeRatesData[country.currency];
     const unit = currencyUnitMap[country.currency] || 1;
-    const trend = analyzeRateTrend(rates.current, rates.historical);
+    const trend = exchangeRatesData[country.currency].trend || "N/A";
+    const trendDirection = analyzeRateTrend(trend);
 
     const currentExchangeRateDisplay = `${unit} ${
       country.currency
@@ -75,6 +66,7 @@ export async function recommend({
       currency: country.currency, // 나라 코드
       current_exchange_rate: currentExchangeRateDisplay, // 현재 환율
       exchange_rate_trend_6m_avg: trend, // 환율 추세
+      exchange_rate_trend_direction: trendDirection, // 추세 방향
     };
   });
 
@@ -109,8 +101,8 @@ export async function recommend({
       3. **1인당 일일 예상 경비**: 식비, 교통비, 관광비 등을 포함하여 약 100,000원을 기준으로 하되, 각 국가의 물가를 고려하여 적절히 조정하세요.
 
       # 수행 규칙 및 논리
-      1. 'exchange_rate_trend_6m_avg' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
-      2. 2. 'exchange_rate_trend_6m_avg'에 나타난 추세와 1년 전 해당 달의 환율 변동을 기반으로 예상 환율을 추정하여 'forecasted_exchange_rate' 항목에 반영하세요.
+      1. 'exchange_rate_trend_6m_avg' 항목과 'exchange_rate_trend_direction' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
+      2. 2. 'exchange_rate_trend_6m_avg', 'exchange_rate_trend_direction'에 나타난 추세와 1년 전 해당 달의 환율 변동을 기반으로 예상 환율을 추정하여 'forecasted_exchange_rate' 항목에 반영하세요.
       3. 위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비의 범위('per_cost_range')**를 계산하세요. 항공권과 숙소 비용의 변동성을 고려하여 최소값과 최대값을 포함하는 범위로 제시하세요.
           - **계산식:** (추정 항공권 비용) + (추정 1박 숙소 비용 * (${durationDays}-1)) + (조정된 일일 경비 * ${durationDays}) 를 기준으로, 약 15% 내외의 변동폭을 적용하여 범위를 산출하세요.
       4. 계산된 'per_cost_range'의 최소값이 사용자의 1인당 예산(${(
