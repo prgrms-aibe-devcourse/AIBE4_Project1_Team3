@@ -689,7 +689,7 @@ class AppController {
       this.reviewBtn.hidden = false;
       this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
-        window.location.href = "/src/review-form.html";
+        window.location.href = "/review-form.html";
       });
     } catch (err) {
       console.error("AI 추천 오류:", err);
@@ -861,7 +861,7 @@ class AppController {
       this.reviewBtn.hidden = false;
       this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
-        window.location.href = "/src/review-form.html";
+        window.location.href = "/review-form.html";
       });
     } catch (err) {
       console.error("AI 추천 오류:", err);
