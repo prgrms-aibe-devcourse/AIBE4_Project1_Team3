@@ -98,4 +98,16 @@ function formatDate(dateString) {
   }
 }
 
+const draftBtn = document.getElementById("draftBtn");
+const data = window.localStorage.getItem("reviewCourse");
+
+if (data) {
+  draftBtn.hidden = false;
+}
+
+// 임시저장된 경로 리뷰하기
+draftBtn.onclick = () => {
+  window.location.href = "/review-form.html?draft=true";
+};
+
 document.addEventListener("DOMContentLoaded", loadPosts);
