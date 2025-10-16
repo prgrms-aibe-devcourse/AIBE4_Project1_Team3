@@ -118,6 +118,8 @@ body {
   border: 1px solid var(--line);
   border-radius: 10px;
   font-size: 14px;
+  color: var(--text-strong);
+  background: #fff;
 }
 .btn {
   border: 0;
