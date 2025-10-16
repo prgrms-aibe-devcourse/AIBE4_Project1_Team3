@@ -111,7 +111,7 @@ function displayResults(recommendations) {
     document.getElementById(`forecastedExchangeRate${rank}`).innerText =
       rec.forecasted_exchange_rate.toLocaleString("ko-KR");
     document.getElementById(`reason${rank}`).innerText = rec.reason;
-    document.getElementById(`perCostRange-${rank}`).innerText =
+    document.getElementById(`perCostRange${rank}`).innerText =
       rec.per_cost_range.toLocaleString("ko-KR") + "원";
 
     const trendEl = document.getElementById(`trend${rank}`);
@@ -259,7 +259,7 @@ async function renderGraph() {
     const trendColorClass = trendColor(rateChange);
 
     const item = document.createElement("div");
-    const canvasId = `chart-${code}`;
+    const canvasId = `chart${code}`;
     item.setAttribute(
       "class",
       "bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg"
