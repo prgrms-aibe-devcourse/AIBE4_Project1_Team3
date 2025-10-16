@@ -609,11 +609,11 @@ class AppController {
       return;
     }
 
-    const hasUrlParams = this.checkUrlParams();
-    if (hasUrlParams) {
-      console.log("캐시 없음 — URL 파라미터 기반 자동 검색 실행");
+    const hasSearchData = this.checkLocalStorageData();
+    if (hasSearchData) {
+      console.log("캐시 없음 — localStorage 검색 데이터 기반 자동 검색 실행");
     } else {
-      console.log("캐시 없음 & URL 파라미터 없음 — 대기 상태");
+      console.log("캐시 없음 & 검색 데이터 없음 — 대기 상태");
     }
   }
 
@@ -729,31 +729,40 @@ class AppController {
     console.log("[초기화] 기존 검색 결과 제거 완료");
   }
 
-  checkUrlParams() {
-    const params = new URLSearchParams(window.location.search);
-    const city = params.get("city");
-    const startDate = params.get("startDate");
-    const endDate = params.get("endDate");
-    const people = params.get("people");
-    const budget = params.get("budget");
+  checkLocalStorageData() {
+    // localStorage에서 검색 데이터 확인
+    const searchDataStr = localStorage.getItem("travelSearchData");
 
-    if (city && startDate && endDate && people && budget) {
-      // 폼에 값 채우기
-      if (this.city) this.city.value = city;
-      if (this.start) this.start.value = startDate;
-      if (this.end) this.end.value = endDate;
-      if (this.people) this.people.value = people;
-      if (this.budget)
-        this.budget.value = Number(budget).toLocaleString("ko-KR");
+    if (searchDataStr) {
+      try {
+        const searchData = JSON.parse(searchDataStr);
+        const { city, startDate, endDate, people, budget } = searchData;
 
-      // city 정보를 localStorage에 저장
-      localStorage.setItem("travelCity", city);
+        if (city && startDate && endDate && people && budget) {
+          // 폼에 값 채우기
+          if (this.city) this.city.value = city;
+          if (this.start) this.start.value = startDate;
+          if (this.end) this.end.value = endDate;
+          if (this.people) this.people.value = people;
+          if (this.budget)
+            this.budget.value = Number(budget).toLocaleString("ko-KR");
 
-      // 자동으로 검색 실행
-      this.autoSubmit(city, startDate, endDate, people, Number(budget));
-      return true; // URL 파라미터가 있음을 반환
+          // city 정보를 localStorage에 저장
+          localStorage.setItem("travelCity", city);
+
+          // 검색 데이터 삭제 (한 번만 사용)
+          localStorage.removeItem("travelSearchData");
+
+          // 자동으로 검색 실행
+          this.autoSubmit(city, startDate, endDate, people, Number(budget));
+          return true; // 검색 데이터가 있음을 반환
+        }
+      } catch (err) {
+        console.error("localStorage 데이터 파싱 오류:", err);
+        localStorage.removeItem("travelSearchData");
+      }
     }
-    return false; // URL 파라미터가 없음을 반환
+    return false; // 검색 데이터가 없음을 반환
   }
 
   async autoSubmit(city, startDate, endDate, people, budgetNum) {
