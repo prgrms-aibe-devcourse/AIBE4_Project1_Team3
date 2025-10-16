@@ -102,8 +102,7 @@ label {
 }
 
 input[type="text"],
-input[type="password"],
-textarea {
+input[type="password"] {
   width: 100%;
   padding: 10px;
   border: 1px solid #acacac;
@@ -111,9 +110,14 @@ textarea {
   font-size: 0.95rem;
 }
 
-textarea {
-  height: 100px;
+.content-input {
+  width: 100%;
+  padding: 10px;
+  height: 150px;
   resize: none;
+  border: 1px solid #acacac;
+  border-radius: 6px;
+  font-size: 0.95rem;
 }
 
 .btn {
