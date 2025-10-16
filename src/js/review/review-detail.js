@@ -367,7 +367,7 @@ document.getElementById("deleteForm").addEventListener("submit", async (e) => {
     if (data.success) {
       console.log("삭제 성공:", data);
       alert("리뷰가 삭제되었습니다.");
-      window.location.href = "/src/review.html";
+      window.location.href = "/review.html";
     } else {
       console.error("삭제 실패:", data);
     }

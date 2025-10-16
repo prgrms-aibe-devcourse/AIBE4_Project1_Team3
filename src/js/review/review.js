@@ -37,7 +37,7 @@ async function loadPosts() {
 
 // 게시글 클릭 시 상세페이지로 이동
 function goDetail(id) {
-  window.location.href = `/src/review-detail.html?id=${id}`;
+  window.location.href = `/review-detail.html?id=${id}`;
 }
 
 // 게시글 정렬
