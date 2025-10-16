@@ -3,6 +3,27 @@ let exchangeRatesData;
 document.addEventListener("DOMContentLoaded", async () => {
   exchangeRatesData = await renderGraph();
   console.log(exchangeRatesData);
+
+  const startDateInput = document.getElementById("startDate");
+  const endDateInput = document.getElementById("endDate");
+
+  const today = new Date().toISOString().split("T")[0];
+
+  startDateInput.setAttribute("min", today);
+
+  startDateInput.value = today;
+
+  startDateInput.addEventListener("change", function () {
+    const selectedStartDate = startDateInput.value;
+
+    endDateInput.setAttribute("min", selectedStartDate);
+
+    if (endDateInput.value < selectedStartDate) {
+      endDateInput.value = selectedStartDate;
+    }
+  });
+
+  endDateInput.setAttribute("min", startDateInput.value);
 });
 
 window.handleFormSubmit = async function (event) {

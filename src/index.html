@@ -105,6 +105,7 @@
                   <input
                     type="date"
                     name="start_date"
+                    id="startDate"
                     value=""
                     class="font-semibold p-1 rounded border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
@@ -112,6 +113,7 @@
                   <input
                     type="date"
                     name="end_date"
+                    id="endDate"
                     value=""
                     class="font-semibold p-1 rounded border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
@@ -189,10 +191,11 @@
           <p class="text-gray-500 mt-2">
             환율이 하락 추세인 국가들을 확인하세요
           </p>
+          <div id="loading-message" class="text-center hidden"></div>
         </div>
         <div
           id="recommendation-grid"
-          class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           <div
             class="bg-white rounded-xl border-2 border-indigo-300 p-6 transition hover:shadow-lg flex flex-col"
@@ -275,7 +278,7 @@
                     </p>
                     <span
                       id="per_cost_range-1"
-                      class="font-extrabold text-indigo-700 text-lg"
+                      class="font-extrabold text-indigo-700 text-base"
                     ></span>
                   </div>
 
@@ -305,10 +308,6 @@
                     ></span>
                   </div>
                 </div>
-              </div>
-
-              <div class="mt-4">
-                <canvas id="chart-1"></canvas>
               </div>
             </div>
             <button
@@ -398,7 +397,7 @@
                     </p>
                     <span
                       id="per_cost_range-2"
-                      class="font-extrabold text-indigo-700 text-lg"
+                      class="font-extrabold text-indigo-700 text-base"
                     ></span>
                   </div>
 
@@ -428,10 +427,6 @@
                     ></span>
                   </div>
                 </div>
-              </div>
-
-              <div class="mt-4">
-                <canvas id="chart-2"></canvas>
               </div>
             </div>
             <button
@@ -521,7 +516,7 @@
                     </p>
                     <span
                       id="per_cost_range-3"
-                      class="font-extrabold text-indigo-700 text-lg"
+                      class="font-extrabold text-indigo-700 text-base"
                     ></span>
                   </div>
 
@@ -551,10 +546,6 @@
                     ></span>
                   </div>
                 </div>
-              </div>
-
-              <div class="mt-4">
-                <canvas id="chart-3"></canvas>
               </div>
             </div>
             <button
