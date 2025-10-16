@@ -118,9 +118,9 @@ export async function recommend({
       답변은 반드시 아래와 같은 JSON 형식으로만 제공해주세요. 다른 설명은 붙이지 마세요.
       {
         "recommendations": [
-          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비"},
-          {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비"},
-          {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비"}
+          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "exchange_rate_trend_6m_avg"},
+          {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "exchange_rate_trend_6m_avg"},
+          {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "exchange_rate_trend_6m_avg"}
         ]
       }
     `;

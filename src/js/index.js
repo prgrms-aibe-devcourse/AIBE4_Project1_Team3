@@ -77,6 +77,19 @@ window.handleFormSubmit = async function (event) {
   }
 };
 
+function trendColor(rateChange) {
+  let trendColorClass;
+
+  if (rateChange < 0) {
+    trendColorClass = "bg-blue-100 text-blue-800"; // 하락 (좋음)
+  } else if (rateChange > 0) {
+    trendColorClass = "bg-red-100 text-red-800"; // 상승 (나쁨)
+  } else {
+    trendColorClass = "bg-gray-100 text-gray-800"; // 변화 없음
+  }
+  return trendColorClass;
+}
+
 function displayResults(recommendations) {
   const loadingP = document.getElementById("loading-message");
   if (loadingP) loadingP.classList.add("hidden");
@@ -100,6 +113,14 @@ function displayResults(recommendations) {
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
     document.getElementById(`per_cost_range-${rank}`).innerText =
       rec.per_cost_range.toLocaleString("ko-KR") + "원";
+
+    const trendEl = document.getElementById(`trend-${rank}`);
+    const rateChange = rec.trend.replace("%", "");
+    trendEl.innerText = `${rateChange > 0 ? "+" : ""}${rec.trend}`;
+    let trendColorClass;
+
+    trendColorClass = trendColor(rateChange);
+    trendEl.classList.add(...trendColorClass.split(" "));
   });
 
   // 추천 루트 보기 버튼에 클릭 이벤트 추가
@@ -232,14 +253,7 @@ async function renderGraph() {
       trend: trendText,
     };
 
-    let trendColorClass;
-    if (rateChange < 0) {
-      trendColorClass = "bg-blue-100 text-blue-800"; // 하락 (좋음)
-    } else if (rateChange > 0) {
-      trendColorClass = "bg-red-100 text-red-800"; // 상승 (나쁨)
-    } else {
-      trendColorClass = "bg-gray-100 text-gray-800"; // 변화 없음
-    }
+    const trendColorClass = trendColor(rateChange);
 
     const item = document.createElement("div");
     const canvasId = `chart-${code}`;
