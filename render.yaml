@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: aibe4-project1-team3
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0

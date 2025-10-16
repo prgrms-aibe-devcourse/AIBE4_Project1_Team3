@@ -360,7 +360,7 @@ document.getElementById("reviewSaveBtn").addEventListener("click", async () => {
     window.localStorage.setItem("reviewCourse", c);
 
     alert("임시저장이 완료되었습니다!");
-    window.location.href = "/src/review.html";
+    window.location.href = "/review.html";
   }
 });
 
@@ -377,7 +377,7 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
   } else {
     const jsonData = Object.fromEntries(formData.entries());
 
-    const url = "http://localhost:3000";
+    const url = "https://aibe4-project1-team3.onrender.com";
 
     // 서버에 전송
     const res = await fetch(url + "/api/review/create", {
@@ -393,7 +393,7 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
         window.localStorage.removeItem("reviewCourse");
       }
       alert("리뷰가 등록되었습니다!");
-      window.location.href = "/src/review.html";
+      window.location.href = "/review.html";
     } else {
       alert("등록 실패: " + result.error);
     }

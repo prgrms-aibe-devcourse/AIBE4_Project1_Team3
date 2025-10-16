@@ -1,5 +1,5 @@
 // API 서버 주소
-const apiServerUrl = "http://localhost:3000";
+const apiServerUrl = "https://aibe4-project1-team3.onrender.com";
 
 let page = 1;
 let totalPages = 1;
@@ -37,7 +37,7 @@ async function loadPosts() {
 
 // 게시글 클릭 시 상세페이지로 이동
 function goDetail(id) {
-  window.location.href = `/src/review-detail.html?id=${id}`;
+  window.location.href = `/review-detail.html?id=${id}`;
 }
 
 // 게시글 정렬
@@ -107,7 +107,7 @@ if (data) {
 
 // 임시저장된 경로 리뷰하기
 draftBtn.onclick = () => {
-  window.location.href = "/src/review-form.html?draft=true";
+  window.location.href = "/review-form.html?draft=true";
 };
 
 document.addEventListener("DOMContentLoaded", loadPosts);
