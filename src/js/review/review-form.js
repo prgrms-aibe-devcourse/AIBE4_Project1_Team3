@@ -389,6 +389,7 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
     const result = await res.json();
 
     if (result.success) {
+      // 임시저장된 리뷰 등록시 localstorage에 있는 데이터 삭제
       if (draft) {
         window.localStorage.removeItem("reviewCourse");
       }
