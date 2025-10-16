@@ -1,6 +1,11 @@
 import { getAiRecommendation } from "./api/ai.js";
 import { showLoading, hideLoading } from "./components/loading.js";
-import { formatCurrency, stripDigits, formatDate, getCurrencySymbol } from "./utils/format.js";
+import {
+  formatCurrency,
+  stripDigits,
+  formatDate,
+  getCurrencySymbol,
+} from "./utils/format.js";
 import { sanitizePlan } from "./utils/sanitizePlan.js";
 
 // XSS 방어를 위한 HTML 이스케이프 함수
@@ -37,35 +42,35 @@ class GeoUtils {
 class ItineraryPlanner {
   // 시간대별 우선순위 (실제 시간 흐름 순서)
   static TIME_SLOT_ORDER = {
-    morning: 1,        // 07:00~09:00 (아침 식사, 공항 도착)
-    late_morning: 2,   // 09:00~12:00 (오전 관광)
-    afternoon: 3,      // 12:00~14:00 (점심 식사)
-    tea: 4,            // 14:00~17:00 (오후 활동, 카페)
-    evening: 5,        // 17:00~20:00 (저녁 식사)
-    night: 6,          // 20:00~23:00 (야간 활동)
+    morning: 1, // 07:00~09:00 (아침 식사, 공항 도착)
+    late_morning: 2, // 09:00~12:00 (오전 관광)
+    afternoon: 3, // 12:00~14:00 (점심 식사)
+    tea: 4, // 14:00~17:00 (오후 활동, 카페)
+    evening: 5, // 17:00~20:00 (저녁 식사)
+    night: 6, // 20:00~23:00 (야간 활동)
   };
 
   // category를 기반으로 기본 timeSlot 추론
   static inferTimeSlot(category) {
     const categoryToTimeSlot = {
       // 식사 (반드시 시간대 고정)
-      breakfast: "morning",        // 아침 = morning
-      lunch: "afternoon",          // 점심 = afternoon
-      dinner: "evening",           // 저녁 = evening
+      breakfast: "morning", // 아침 = morning
+      lunch: "afternoon", // 점심 = afternoon
+      dinner: "evening", // 저녁 = evening
 
       // 간식/카페
-      snack: "tea",                // 간식 = tea (오후)
-      cafe: "tea",                 // 카페 = tea (오후)
+      snack: "tea", // 간식 = tea (오후)
+      cafe: "tea", // 카페 = tea (오후)
 
       // 교통/이동
-      airport: "morning",          // 공항 = morning (첫날) 또는 late_morning (마지막날)
-      transfer: "late_morning",    // 이동 = late_morning
+      airport: "morning", // 공항 = morning (첫날) 또는 late_morning (마지막날)
+      transfer: "late_morning", // 이동 = late_morning
 
       // 활동
       sightseeing: "late_morning", // 관광 = 오전 (기본값)
-      shopping: "tea",             // 쇼핑 = 오후 (기본값)
-      activity: "tea",             // 액티비티 = 오후 (기본값)
-      nightlife: "night",          // 야간활동 = night
+      shopping: "tea", // 쇼핑 = 오후 (기본값)
+      activity: "tea", // 액티비티 = 오후 (기본값)
+      nightlife: "night", // 야간활동 = night
     };
     return categoryToTimeSlot[category] || "late_morning";
   }
@@ -77,8 +82,10 @@ class ItineraryPlanner {
     }
 
     return [...stops].sort((a, b) => {
-      const timeSlotA = a.timeSlot || ItineraryPlanner.inferTimeSlot(a.category);
-      const timeSlotB = b.timeSlot || ItineraryPlanner.inferTimeSlot(b.category);
+      const timeSlotA =
+        a.timeSlot || ItineraryPlanner.inferTimeSlot(a.category);
+      const timeSlotB =
+        b.timeSlot || ItineraryPlanner.inferTimeSlot(b.category);
 
       const orderA = ItineraryPlanner.TIME_SLOT_ORDER[timeSlotA] || 99;
       const orderB = ItineraryPlanner.TIME_SLOT_ORDER[timeSlotB] || 99;
@@ -109,7 +116,9 @@ class ItineraryPlanner {
       );
 
       // 거리 제한을 초과하더라도 식사는 반드시 포함
-      const isMeal = ["breakfast", "lunch", "dinner"].includes(limited[i].category);
+      const isMeal = ["breakfast", "lunch", "dinner"].includes(
+        limited[i].category
+      );
 
       if (total + d <= maxTravelKm || isMeal) {
         total += d;
@@ -133,7 +142,7 @@ class MapRenderer {
     this.map = null;
     this.layer = null;
   }
-  
+
   init(center, zoom = 12) {
     if (this.map) {
       this.map.remove();
@@ -149,6 +158,7 @@ class MapRenderer {
     this.layer = L.layerGroup().addTo(this.map);
   }
 
+  // 모든 여정의 경로 맵 구성 로직
   renderDayPlans(dayPlans) {
     if (!this.map || !this.layer) return;
     this.layer.clearLayers();
@@ -180,7 +190,7 @@ class MapRenderer {
       this.map.fitBounds(L.latLngBounds(allPts), { padding: [30, 30] });
   }
 
-  //해당 Day선택 시 맵 구성 로직
+  // 해당 Day선택 시 맵 구성 로직
   renderSingleDay(dayPlan) {
     if (!this.map || !this.layer) return;
     this.layer.clearLayers();
@@ -278,7 +288,7 @@ class RecommendationRenderer {
       lunch: "🍴",
       dinner: "🍽️",
       snack: "🍰",
-      cafe: "☕"
+      cafe: "☕",
     };
     return mealIcons[category] || "";
   }
@@ -289,7 +299,7 @@ class RecommendationRenderer {
       lunch: "점심",
       dinner: "저녁",
       snack: "간식",
-      cafe: "카페"
+      cafe: "카페",
     };
     return mealLabels[category] || "";
   }
@@ -298,13 +308,19 @@ class RecommendationRenderer {
     const stopSum = RecommendationRenderer.calculateStopCost(stop);
     const cbHTML = this.renderCostBreakdown(stop, city);
     const category = stop.category || "";
-    const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(category);
+    const isMeal = ["breakfast", "lunch", "dinner", "snack", "cafe"].includes(
+      category
+    );
     const mealIcon = isMeal ? RecommendationRenderer.getMealIcon(category) : "";
-    const mealLabel = isMeal ? RecommendationRenderer.getMealLabel(category) : "";
+    const mealLabel = isMeal
+      ? RecommendationRenderer.getMealLabel(category)
+      : "";
     const mealClass = isMeal ? "meal-stop" : "";
 
     return `
-      <li class="stops-row ${mealClass}" data-category="${escapeHtml(category)}">
+      <li class="stops-row ${mealClass}" data-category="${escapeHtml(
+      category
+    )}">
         <span class="idx">${index + 1}</span>
         <div class="place">
           <div class="name">
@@ -320,7 +336,9 @@ class RecommendationRenderer {
           }
           ${cbHTML}
         </div>
-        <span class="cost">${stopSum === 0 ? "무료" : formatCurrency(stopSum)}</span>
+        <span class="cost">${
+          stopSum === 0 ? "무료" : formatCurrency(stopSum)
+        }</span>
       </li>`;
   }
 
@@ -363,7 +381,10 @@ class RecommendationRenderer {
   calculateDaySums(days) {
     // 실제 화면에 표시되는 stops의 합계를 기준으로 계산
     return days.map((dp) =>
-      (dp.stops || []).reduce((sum, s) => sum + (Number(s.estimatedCost) || 0), 0)
+      (dp.stops || []).reduce(
+        (sum, s) => sum + (Number(s.estimatedCost) || 0),
+        0
+      )
     );
   }
 
@@ -415,13 +436,147 @@ class RecommendationRenderer {
   }
 }
 
+/**
+ * 날씨 정보를 화면에 렌더링하는 클래스
+ */
+class WeatherRenderer {
+  constructor(container) {
+    this.container = container;
+  }
+
+  /**
+   * 날씨 상태에 따른 아이콘을 반환합니다.
+   */
+  getWeatherIcon(season, rainyDays) {
+    if (rainyDays > 15) return "🌧️";
+
+    const seasonIconMap = {
+      겨울: "❄️",
+      여름: "☀️",
+      더위: "☀️",
+      우기: "🌧️",
+      건기: "☀️",
+      봄: "🌸",
+      가을: "🍂",
+    };
+
+    return seasonIconMap[season] || "🌤️";
+  }
+
+  /**
+   * 날씨 정보를 기반으로 HTML 카드를 생성합니다.
+   */
+  renderWeatherCard(weather) {
+    const icon = this.getWeatherIcon(weather.season, weather.rainyDays);
+    const isRealTime = weather.isRealTime || false;
+    const title = isRealTime
+      ? `${escapeHtml(weather.city)} 실시간 예보`
+      : `${escapeHtml(weather.city)} ${weather.month}월 평균 날씨`;
+
+    const precipitationLabel = isRealTime ? "강수 확률" : "강수량";
+    const precipitationValue = isRealTime
+      ? `${weather.precipitation}%`
+      : `${weather.precipitation}mm`;
+
+    return `
+      <div class="weather-card ${isRealTime ? "weather-card--realtime" : ""}">
+        <div class="weather-header">
+          <div class="weather-icon">${icon}</div>
+          <div class="weather-title">
+            <h4>${title}</h4>
+            <span class="weather-season">${escapeHtml(weather.season)}</span>
+          </div>
+        </div>
+
+        ${isRealTime ? `<div class="weather-badge">⚡ 실시간 예보</div>` : ""}
+
+        <div class="weather-temp">
+          <div class="temp-item">
+            <span class="temp-label">최저</span>
+            <span class="temp-value temp-value-left">${weather.tempLow}°C</span>
+          </div>
+          <div class="temp-divider"></div>
+          <div class="temp-item">
+            <span class="temp-label">최고</span>
+            <span class="temp-value temp-value-right">${
+              weather.tempHigh
+            }°C</span>
+          </div>
+        </div>
+
+        <div class="weather-details">
+          <div class="detail-item">
+            <span class="detail-icon">💧</span>
+            <span class="detail-text">${precipitationLabel} ${precipitationValue}</span>
+          </div>
+          ${
+            !isRealTime
+              ? `<div class="detail-item">
+                  <span class="detail-icon">🌂</span>
+                  <span class="detail-text">강수일 약 ${weather.rainyDays}일</span>
+                </div>`
+              : ""
+          }
+        </div>
+
+        <div class="weather-tip">
+          <div class="tip-icon">💡</div>
+          <div class="tip-content">
+            <strong>여행 TIP</strong>
+            <p>${escapeHtml(weather.tip)}</p>
+          </div>
+        </div>
+
+        ${
+          !isRealTime
+            ? `<div class="weather-notice">
+                ℹ️ 평균 날씨 데이터입니다. 여행일이 5일 이내면 실시간 예보가 표시됩니다.
+              </div>`
+            : `<div class="weather-notice weather-notice--success">
+                ✅ OpenWeatherMap 실시간 예보 데이터입니다.
+              </div>`
+        }
+      </div>
+    `;
+  }
+
+  render(weather) {
+    if (!weather) {
+      this.container.innerHTML = "<p>날씨 정보를 불러올 수 없습니다.</p>";
+      return;
+    }
+    this.container.innerHTML = this.renderWeatherCard(weather);
+  }
+
+  showLoading() {
+    this.container.innerHTML = `
+      <div class="loading__spinner">
+        <div class="spinner"></div>
+        <span>날씨 정보를 불러오는 중입니다...</span>
+      </div>
+    `;
+  }
+
+  showError(message) {
+    this.container.innerHTML = `<p style="color: #ef4444;">${escapeHtml(
+      message
+    )}</p>`;
+  }
+}
+
 class AppController {
   constructor() {
     this.result = document.getElementById("recommendResult");
     this.loading = document.getElementById("loadingIndicator");
+    this.rightPanel = document.getElementById("rightPanel");
     this.mapContainer = document.querySelector(".panel--map");
+    this.weatherPanel = document.getElementById("weatherPanel");
+    this.weatherResults = document.getElementById("weatherResults");
+
     this.map = new MapRenderer("mapContainer");
     this.cards = new RecommendationRenderer(this.result);
+    this.weather = new WeatherRenderer(this.weatherResults);
+
     this.form = document.getElementById("travelForm");
     this.start = document.getElementById("travelStart");
     this.end = document.getElementById("travelEnd");
@@ -460,11 +615,11 @@ class AppController {
 
   checkUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    const city = params.get('city');
-    const startDate = params.get('startDate');
-    const endDate = params.get('endDate');
-    const people = params.get('people');
-    const budget = params.get('budget');
+    const city = params.get("city");
+    const startDate = params.get("startDate");
+    const endDate = params.get("endDate");
+    const people = params.get("people");
+    const budget = params.get("budget");
 
     if (city && startDate && endDate && people && budget) {
       // 폼에 값 채우기
@@ -472,7 +627,8 @@ class AppController {
       if (this.start) this.start.value = startDate;
       if (this.end) this.end.value = endDate;
       if (this.people) this.people.value = people;
-      if (this.budget) this.budget.value = Number(budget).toLocaleString('ko-KR');
+      if (this.budget)
+        this.budget.value = Number(budget).toLocaleString("ko-KR");
 
       // city 정보를 sessionStorage에 저장
       sessionStorage.setItem("travelCity", city);
@@ -484,7 +640,7 @@ class AppController {
 
   async autoSubmit(city, startDate, endDate, people, budgetNum) {
     showLoading(this.loading);
-    this.mapContainer.hidden = true;
+    this.rightPanel.style.display = "none";
 
     try {
       const itinerary = await getAiRecommendation({
@@ -510,10 +666,28 @@ class AppController {
       this.map.init([34.6937, 135.5023], 11);
       this.cards.render(finalItin, this.map);
       this.map.renderDayPlans(finalItin.dayPlans);
-      this.mapContainer.hidden = false;
-      setTimeout(() => this.map.map.invalidateSize(), 0);
-      this.reviewBtn.hidden = false;
 
+      // 오른쪽 패널 표시 (맵 + 날씨 영역 표시)
+      this.rightPanel.style.display = null;
+      setTimeout(() => this.map.map.invalidateSize(), 0);
+
+      // 날씨 정보 로딩 시작
+      this.weather.showLoading();
+
+      // AI 응답의 첫 번째 장소 좌표 추출
+      const firstStop = finalItin.dayPlans?.[0]?.stops?.[0];
+      const weatherLat = firstStop?.lat || 34.6937;
+      const weatherLng = firstStop?.lng || 135.5023;
+
+      this.fetchAndRenderWeather({
+        city: finalItin.city,
+        lat: weatherLat,
+        lng: weatherLng,
+        startDate: startDate,
+        averageWeather: itinerary.averageWeather,
+      });
+
+      this.reviewBtn.hidden = false;
       this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
         window.location.href = "/src/review-form.html";
@@ -536,13 +710,88 @@ class AppController {
       hideLoading(this.loading);
     }
   }
+
+  /**
+   * 날씨 정보를 가져와서 화면에 렌더링합니다.
+   * - 5일 이내: OpenWeatherMap 실시간 예보
+   * - 5일 이후: AI가 제공한 평균 날씨 사용
+   */
+  async fetchAndRenderWeather({ city, lat, lng, startDate, averageWeather }) {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const travelDate = new Date(startDate);
+      travelDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((travelDate - today) / (1000 * 60 * 60 * 24));
+
+      const apiBaseUrl = "http://localhost:3000";
+
+      console.log(`[날씨 로직] ${city}, 여행까지 ${diffDays}일`);
+
+      // 5일 이내: 실시간 날씨 API 호출
+      if (diffDays >= 0 && diffDays <= 5) {
+        const params = new URLSearchParams({
+          city,
+          lat,
+          lng,
+          startDate,
+        });
+
+        const response = await fetch(
+          `${apiBaseUrl}/api/routes/weather?${params}`
+        );
+
+        if (!response.ok) {
+          throw new Error("실시간 날씨 API 오류");
+        }
+
+        const weatherData = await response.json();
+        this.weather.render(weatherData);
+        console.log(`[실시간 날씨 표시] ${city}`);
+        return;
+      }
+
+      // 5일 이후: AI가 제공한 평균 날씨 사용
+      if (averageWeather) {
+        this.weather.render({
+          ...averageWeather,
+          city,
+          isAverage: true,
+          isRealTime: false,
+        });
+        console.log(`[AI 평균 날씨 표시] ${city} - ${averageWeather.month}월`);
+      } else {
+        this.weather.showError("날씨 정보를 불러올 수 없습니다.");
+      }
+    } catch (err) {
+      console.error("날씨 정보 로드 오류:", err);
+
+      // 실시간 날씨 실패 시 AI 평균 날씨로 폴백
+      if (averageWeather) {
+        this.weather.render({
+          ...averageWeather,
+          city,
+          isAverage: true,
+          isRealTime: false,
+        });
+        console.log(`[실시간 실패, AI 평균 날씨 표시] ${city}`);
+      } else {
+        this.weather.showError("날씨 정보를 불러올 수 없습니다.");
+      }
+    }
+  }
+
   async handleSubmit(e) {
     e.preventDefault();
     const start = this.start?.value;
     const end = this.end?.value;
     const people = (this.people?.value || "").trim();
     const budgetNum = Number(stripDigits(this.budget?.value || ""));
-    const city = (this.city?.value || sessionStorage.getItem("travelCity") || "오사카").trim();
+    const city = (
+      this.city?.value ||
+      sessionStorage.getItem("travelCity") ||
+      "오사카"
+    ).trim();
     const peopleNum = parseInt(people, 10);
 
     if (!start || !end || !people || !budgetNum) {
@@ -566,7 +815,7 @@ class AppController {
     sessionStorage.setItem("travelCity", city);
 
     showLoading(this.loading);
-    this.mapContainer.hidden = true;
+    this.rightPanel.style.display = "none";
 
     try {
       const itinerary = await getAiRecommendation({
@@ -581,7 +830,7 @@ class AppController {
         throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
       }
 
-      const fx = 9.5; 
+      const fx = 9.5;
       sanitizePlan(itinerary, fx);
 
       const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
@@ -592,10 +841,29 @@ class AppController {
       this.map.init([34.6937, 135.5023], 11);
       this.cards.render(finalItin, this.map);
       this.map.renderDayPlans(finalItin.dayPlans);
-      this.mapContainer.hidden = false;
-      setTimeout(() => this.map.map.invalidateSize(), 0); //지도 깨짐 방지
-      this.reviewBtn.hidden = false;
 
+      // 오른쪽 패널 표시 (맵 + 날씨 영역 표시)
+      this.rightPanel.style.display = null;
+      setTimeout(() => this.map.map.invalidateSize(), 0); // 지도 깨짐 방지
+
+      // 날씨 정보 로딩 시작 (백그라운드에서 로드)
+      this.weather.showLoading();
+
+      // AI 응답의 첫 번째 장소 좌표 추출
+      const firstStop = finalItin.dayPlans?.[0]?.stops?.[0];
+      const weatherLat = firstStop?.lat || 34.6937; // 기본값: 오사카
+      const weatherLng = firstStop?.lng || 135.5023;
+
+      this.fetchAndRenderWeather({
+        city: finalItin.city, // AI가 추천한 최종 도시명
+        lat: weatherLat, // 첫 번째 장소의 위도
+        lng: weatherLng, // 첫 번째 장소의 경도
+        startDate: start, // 사용자가 입력한 여행 시작일
+        averageWeather: itinerary.averageWeather, // AI가 제공한 평균 날씨
+      });
+
+      // 리뷰 버튼 표시 및 이벤트 리스너 설정
+      this.reviewBtn.hidden = false;
       this.reviewBtn.addEventListener("click", () => {
         sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
         window.location.href = "/src/review-form.html";
