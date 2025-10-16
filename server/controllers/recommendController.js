@@ -23,94 +23,206 @@ function getCurrencyInfo(city) {
   const cityLower = city.toLowerCase();
 
   // 일본
-  if (cityLower.includes('도쿄') || cityLower.includes('오사카') || cityLower.includes('교토') ||
-      cityLower.includes('후쿠오카') || cityLower.includes('삿포로') || cityLower.includes('나고야') ||
-      cityLower.includes('tokyo') || cityLower.includes('osaka') || cityLower.includes('kyoto') ||
-      cityLower.includes('fukuoka') || cityLower.includes('sapporo') || cityLower.includes('nagoya')) {
-    return { currency: '엔', currencyCode: 'JPY', symbol: '¥', rate: 9.5 };
+  if (
+    cityLower.includes("도쿄") ||
+    cityLower.includes("오사카") ||
+    cityLower.includes("교토") ||
+    cityLower.includes("후쿠오카") ||
+    cityLower.includes("삿포로") ||
+    cityLower.includes("나고야") ||
+    cityLower.includes("tokyo") ||
+    cityLower.includes("osaka") ||
+    cityLower.includes("kyoto") ||
+    cityLower.includes("fukuoka") ||
+    cityLower.includes("sapporo") ||
+    cityLower.includes("nagoya")
+  ) {
+    return { currency: "엔", currencyCode: "JPY", symbol: "¥", rate: 9.5 };
   }
 
   // 미국
-  if (cityLower.includes('뉴욕') || cityLower.includes('로스앤젤레스') || cityLower.includes('샌프란시스코') ||
-      cityLower.includes('시애틀') || cityLower.includes('시카고') || cityLower.includes('라스베가스') ||
-      cityLower.includes('new york') || cityLower.includes('los angeles') || cityLower.includes('san francisco') ||
-      cityLower.includes('seattle') || cityLower.includes('chicago') || cityLower.includes('las vegas') ||
-      cityLower.includes('la ') || cityLower.includes('nyc') || cityLower.includes('sf')) {
-    return { currency: '달러', currencyCode: 'USD', symbol: '$', rate: 1400 };
+  if (
+    cityLower.includes("뉴욕") ||
+    cityLower.includes("로스앤젤레스") ||
+    cityLower.includes("샌프란시스코") ||
+    cityLower.includes("시애틀") ||
+    cityLower.includes("시카고") ||
+    cityLower.includes("라스베가스") ||
+    cityLower.includes("new york") ||
+    cityLower.includes("los angeles") ||
+    cityLower.includes("san francisco") ||
+    cityLower.includes("seattle") ||
+    cityLower.includes("chicago") ||
+    cityLower.includes("las vegas") ||
+    cityLower.includes("la ") ||
+    cityLower.includes("nyc") ||
+    cityLower.includes("sf")
+  ) {
+    return { currency: "달러", currencyCode: "USD", symbol: "$", rate: 1400 };
   }
 
   // 유럽 (유로존)
-  if (cityLower.includes('파리') || cityLower.includes('베를린') || cityLower.includes('로마') ||
-      cityLower.includes('바르셀로나') || cityLower.includes('암스테르담') || cityLower.includes('빈') ||
-      cityLower.includes('paris') || cityLower.includes('berlin') || cityLower.includes('rome') ||
-      cityLower.includes('barcelona') || cityLower.includes('amsterdam') || cityLower.includes('vienna') ||
-      cityLower.includes('프랑크푸르트') || cityLower.includes('밀라노') || cityLower.includes('마드리드')) {
-    return { currency: '유로', currencyCode: 'EUR', symbol: '€', rate: 1500 };
+  if (
+    cityLower.includes("파리") ||
+    cityLower.includes("베를린") ||
+    cityLower.includes("로마") ||
+    cityLower.includes("바르셀로나") ||
+    cityLower.includes("암스테르담") ||
+    cityLower.includes("빈") ||
+    cityLower.includes("paris") ||
+    cityLower.includes("berlin") ||
+    cityLower.includes("rome") ||
+    cityLower.includes("barcelona") ||
+    cityLower.includes("amsterdam") ||
+    cityLower.includes("vienna") ||
+    cityLower.includes("프랑크푸르트") ||
+    cityLower.includes("밀라노") ||
+    cityLower.includes("마드리드")
+  ) {
+    return { currency: "유로", currencyCode: "EUR", symbol: "€", rate: 1500 };
   }
 
   // 영국
-  if (cityLower.includes('런던') || cityLower.includes('london') || cityLower.includes('맨체스터') ||
-      cityLower.includes('manchester') || cityLower.includes('에든버러') || cityLower.includes('edinburgh')) {
-    return { currency: '파운드', currencyCode: 'GBP', symbol: '£', rate: 1800 };
+  if (
+    cityLower.includes("런던") ||
+    cityLower.includes("london") ||
+    cityLower.includes("맨체스터") ||
+    cityLower.includes("manchester") ||
+    cityLower.includes("에든버러") ||
+    cityLower.includes("edinburgh")
+  ) {
+    return { currency: "파운드", currencyCode: "GBP", symbol: "£", rate: 1800 };
   }
 
   // 중국
-  if (cityLower.includes('베이징') || cityLower.includes('상하이') || cityLower.includes('광저우') ||
-      cityLower.includes('선전') || cityLower.includes('beijing') || cityLower.includes('shanghai') ||
-      cityLower.includes('guangzhou') || cityLower.includes('shenzhen') || cityLower.includes('청두') ||
-      cityLower.includes('항저우')) {
-    return { currency: '위안', currencyCode: 'CNY', symbol: '¥', rate: 190 };
+  if (
+    cityLower.includes("베이징") ||
+    cityLower.includes("상하이") ||
+    cityLower.includes("광저우") ||
+    cityLower.includes("선전") ||
+    cityLower.includes("beijing") ||
+    cityLower.includes("shanghai") ||
+    cityLower.includes("guangzhou") ||
+    cityLower.includes("shenzhen") ||
+    cityLower.includes("청두") ||
+    cityLower.includes("항저우")
+  ) {
+    return { currency: "위안", currencyCode: "CNY", symbol: "¥", rate: 190 };
   }
 
   // 태국
-  if (cityLower.includes('방콕') || cityLower.includes('bangkok') || cityLower.includes('푸켓') ||
-      cityLower.includes('phuket') || cityLower.includes('치앙마이') || cityLower.includes('chiang mai')) {
-    return { currency: '바트', currencyCode: 'THB', symbol: '฿', rate: 40 };
+  if (
+    cityLower.includes("방콕") ||
+    cityLower.includes("bangkok") ||
+    cityLower.includes("푸켓") ||
+    cityLower.includes("phuket") ||
+    cityLower.includes("치앙마이") ||
+    cityLower.includes("chiang mai")
+  ) {
+    return { currency: "바트", currencyCode: "THB", symbol: "฿", rate: 40 };
   }
 
   // 베트남
-  if (cityLower.includes('하노이') || cityLower.includes('호치민') || cityLower.includes('다낭') ||
-      cityLower.includes('hanoi') || cityLower.includes('ho chi minh') || cityLower.includes('danang') ||
-      cityLower.includes('호이안')) {
-    return { currency: '동', currencyCode: 'VND', symbol: '₫', rate: 0.055 };
+  if (
+    cityLower.includes("하노이") ||
+    cityLower.includes("호치민") ||
+    cityLower.includes("다낭") ||
+    cityLower.includes("hanoi") ||
+    cityLower.includes("ho chi minh") ||
+    cityLower.includes("danang") ||
+    cityLower.includes("호이안")
+  ) {
+    return { currency: "동", currencyCode: "VND", symbol: "₫", rate: 0.055 };
   }
 
   // 싱가포르
-  if (cityLower.includes('싱가포르') || cityLower.includes('singapore')) {
-    return { currency: '싱가포르 달러', currencyCode: 'SGD', symbol: 'S$', rate: 1050 };
+  if (cityLower.includes("싱가포르") || cityLower.includes("singapore")) {
+    return {
+      currency: "싱가포르 달러",
+      currencyCode: "SGD",
+      symbol: "S$",
+      rate: 1050,
+    };
   }
 
   // 홍콩
-  if (cityLower.includes('홍콩') || cityLower.includes('hong kong') || cityLower.includes('hk')) {
-    return { currency: '홍콩 달러', currencyCode: 'HKD', symbol: 'HK$', rate: 180 };
+  if (
+    cityLower.includes("홍콩") ||
+    cityLower.includes("hong kong") ||
+    cityLower.includes("hk")
+  ) {
+    return {
+      currency: "홍콩 달러",
+      currencyCode: "HKD",
+      symbol: "HK$",
+      rate: 180,
+    };
   }
 
   // 대만
-  if (cityLower.includes('타이베이') || cityLower.includes('taipei') || cityLower.includes('타이중') ||
-      cityLower.includes('가오슝') || cityLower.includes('kaohsiung')) {
-    return { currency: '대만 달러', currencyCode: 'TWD', symbol: 'NT$', rate: 45 };
+  if (
+    cityLower.includes("타이베이") ||
+    cityLower.includes("taipei") ||
+    cityLower.includes("타이중") ||
+    cityLower.includes("가오슝") ||
+    cityLower.includes("kaohsiung")
+  ) {
+    return {
+      currency: "대만 달러",
+      currencyCode: "TWD",
+      symbol: "NT$",
+      rate: 45,
+    };
   }
 
   // 호주
-  if (cityLower.includes('시드니') || cityLower.includes('멜버른') || cityLower.includes('브리즈번') ||
-      cityLower.includes('sydney') || cityLower.includes('melbourne') || cityLower.includes('brisbane')) {
-    return { currency: '호주 달러', currencyCode: 'AUD', symbol: 'A$', rate: 950 };
+  if (
+    cityLower.includes("시드니") ||
+    cityLower.includes("멜버른") ||
+    cityLower.includes("브리즈번") ||
+    cityLower.includes("sydney") ||
+    cityLower.includes("melbourne") ||
+    cityLower.includes("brisbane")
+  ) {
+    return {
+      currency: "호주 달러",
+      currencyCode: "AUD",
+      symbol: "A$",
+      rate: 950,
+    };
   }
 
   // 캐나다
-  if (cityLower.includes('토론토') || cityLower.includes('밴쿠버') || cityLower.includes('몬트리올') ||
-      cityLower.includes('toronto') || cityLower.includes('vancouver') || cityLower.includes('montreal')) {
-    return { currency: '캐나다 달러', currencyCode: 'CAD', symbol: 'C$', rate: 1050 };
+  if (
+    cityLower.includes("토론토") ||
+    cityLower.includes("밴쿠버") ||
+    cityLower.includes("몬트리올") ||
+    cityLower.includes("toronto") ||
+    cityLower.includes("vancouver") ||
+    cityLower.includes("montreal")
+  ) {
+    return {
+      currency: "캐나다 달러",
+      currencyCode: "CAD",
+      symbol: "C$",
+      rate: 1050,
+    };
   }
 
   // 한국 (기본값 처리용)
-  if (cityLower.includes('서울') || cityLower.includes('부산') || cityLower.includes('제주') ||
-      cityLower.includes('seoul') || cityLower.includes('busan') || cityLower.includes('jeju')) {
-    return { currency: '원', currencyCode: 'KRW', symbol: '₩', rate: 1 };
+  if (
+    cityLower.includes("서울") ||
+    cityLower.includes("부산") ||
+    cityLower.includes("제주") ||
+    cityLower.includes("seoul") ||
+    cityLower.includes("busan") ||
+    cityLower.includes("jeju")
+  ) {
+    return { currency: "원", currencyCode: "KRW", symbol: "₩", rate: 1 };
   }
 
   // 기본값: 달러 (알 수 없는 도시의 경우)
-  return { currency: '달러', currencyCode: 'USD', symbol: '$', rate: 1400 };
+  return { currency: "달러", currencyCode: "USD", symbol: "$", rate: 1400 };
 }
 
 router.post("/ai/itinerary", async (req, res) => {
@@ -149,7 +261,9 @@ router.post("/ai/itinerary", async (req, res) => {
       4) 스톱 수: 하루 8~11개(식사 3개 + 관광/쇼핑 5~8개). Day 1부터 Day ${days}까지 모든 날짜를 포함해야 한다.
         - Day 1: "공항 도착(airport)→시내 이동(transfer)→저녁식사(dinner, 필수)→관광/쇼핑"
         - Day ${days}: "아침식사(breakfast, 필수)→점심식사(lunch, 필수)→오전 관광/쇼핑→시내→공항(transfer)→공항 체크인(airport)"
-        - 중간 날짜들(Day 2 ~ Day ${days - 1}): 각 날마다 아침/점심/저녁 3끼 + 관광/식사/쇼핑 5~8개 일정 포함
+        - 중간 날짜들(Day 2 ~ Day ${
+          days - 1
+        }): 각 날마다 아침/점심/저녁 3끼 + 관광/식사/쇼핑 5~8개 일정 포함
       5) 식사/쇼핑 철학(1인 기준):
         - **식사 필수**: 매일 아침(breakfast), 점심(lunch), 저녁(dinner) 3끼를 빠짐없이 포함한다.
         - 매일 쇼핑 또는 대형 상업시설 1곳 이상 포함(백화점/아울렛/상점가/드럭스토어/전자상가 등).
@@ -162,7 +276,11 @@ router.post("/ai/itinerary", async (req, res) => {
           tags(예: ["shopping","premium-dinner","must-visit","landmark","local-food"])
       7) dayReason: 각 날짜 테마/분위기를 서로 다르게(중복 표현 금지).
       8) 예산 분배(1인 기준):
-        - 전체 합계(overallTotal) ∈ [${Math.round(budgetPerPerson * 0.95)}, ${Math.round(budgetPerPerson * 1.05)}] (반드시 95~100% 소진, 절대 90% 미만 금지)
+        - 전체 합계(overallTotal) ∈ [${Math.round(
+          budgetPerPerson * 0.95
+        )}, ${Math.round(
+    budgetPerPerson * 1.05
+  )}] (반드시 95~100% 소진, 절대 90% 미만 금지)
         - 일평균 목표: ${Math.round(budgetPerPerson / days)}원 ±10%
         - 비용 산정은 ${currencyCode} 단가 → KRW 환산(정수 반올림). 예: Y = round(X${currency} × ${fx})원
         - costReason 형식(1인 기준): "단가(${currency}) × 수량 = X${currency} → 1${currency}=${fx}원 → Y원(1인)"
@@ -221,7 +339,9 @@ router.post("/ai/itinerary", async (req, res) => {
         "days": ${days},
         "meta": {
           "budgetPerPersonKRW": ${budgetPerPerson},
-          "targetOverallSpendRangeKRW": [${Math.round(budgetPerPerson * 0.99)}, ${budgetPerPerson}],
+          "targetOverallSpendRangeKRW": [${Math.round(
+            budgetPerPerson * 0.99
+          )}, ${budgetPerPerson}],
           "targetDailyAvgKRW": ${Math.round(budgetPerPerson / days)},
           "notes": "매일 쇼핑/대형상업시설 1곳 이상, 프리미엄 식사 2회 이상, Day 1/마지막 날 공항 동선 포함"
         },
@@ -272,7 +392,9 @@ router.post("/ai/itinerary", async (req, res) => {
       - dayPlans 배열 길이 = ${days} (모든 날짜 포함)
       - **식사 필수 검증**: 각 day마다 category="breakfast", "lunch", "dinner" 각각 최소 1개씩 포함 확인
       - dayTotal = 해당 day의 estimatedCost 합(정확히 일치), overallTotal = 모든 dayTotal 합
-      - overallTotal ∈ [${Math.round(budgetPerPerson * 0.95)}, ${budgetPerPerson}] (반드시 95~100%, 절대 90% 미만 금지)
+      - overallTotal ∈ [${Math.round(
+        budgetPerPerson * 0.95
+      )}, ${budgetPerPerson}] (반드시 95~100%, 절대 90% 미만 금지)
       - Day 1/마지막 날: 공항/이동/프리미엄 식사 포함
       - 매일 shopping/activity/nightlife ≥ 1
       - must-visit ≥ 3, 프리미엄 식사 ≥ 2
@@ -341,7 +463,9 @@ router.post("/ai/itinerary", async (req, res) => {
       return res.status(400).json({ error: "AI 응답 파싱 실패", raw: text });
     }
 
-    console.log(`생성된 일정 일수: ${json.dayPlans?.length || 0}, 요청 일수: ${days}`);
+    console.log(
+      `생성된 일정 일수: ${json.dayPlans?.length || 0}, 요청 일수: ${days}`
+    );
 
     const withReasons = ensureReasons(json);
     res.json(withReasons);
@@ -357,7 +481,12 @@ router.get("/weather", async (req, res) => {
 
   // 필수 파라미터 검증
   if (!lat || !lng || !city || !startDate) {
-    console.error("[날씨 API] ❌ 필수 파라미터 누락:", { lat, lng, city, startDate });
+    console.error("[날씨 API] ❌ 필수 파라미터 누락:", {
+      lat,
+      lng,
+      city,
+      startDate,
+    });
     return res.status(400).json({
       error: "필수 파라미터가 누락되었습니다: lat, lng, city, startDate",
     });
@@ -381,14 +510,19 @@ router.get("/weather", async (req, res) => {
     }
 
     if (diffDays > 5) {
-      console.log(`[날씨 API] ⚠️ 범위 초과: ${city} - ${diffDays}일 후 (최대 5일)`);
+      console.log(
+        `[날씨 API] ⚠️ 범위 초과: ${city} - ${diffDays}일 후 (최대 5일)`
+      );
       return res.status(400).json({
-        error: "실시간 예보는 5일 이내만 가능합니다. AI 응답의 평균 날씨를 사용하세요.",
+        error:
+          "실시간 예보는 5일 이내만 가능합니다. AI 응답의 평균 날씨를 사용하세요.",
         diffDays,
       });
     }
 
-    console.log(`[날씨 API] ✅ 유효한 범위 (${diffDays}일 후) - fetchRealTimeWeather 호출 시작`);
+    console.log(
+      `[날씨 API] ✅ 유효한 범위 (${diffDays}일 후) - fetchRealTimeWeather 호출 시작`
+    );
 
     // 실시간 날씨 API 호출
     const weatherData = await fetchRealTimeWeather(
@@ -398,7 +532,10 @@ router.get("/weather", async (req, res) => {
       startDate
     );
 
-    console.log(`[날씨 API] fetchRealTimeWeather 완료 - 결과:`, weatherData ? "✅ 성공" : "❌ null 반환");
+    console.log(
+      `[날씨 API] fetchRealTimeWeather 완료 - 결과:`,
+      weatherData ? "✅ 성공" : "❌ null 반환"
+    );
 
     if (!weatherData) {
       throw new Error("날씨 데이터를 가져올 수 없습니다.");

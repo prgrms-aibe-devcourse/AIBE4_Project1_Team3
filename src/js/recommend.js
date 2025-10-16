@@ -142,6 +142,7 @@ class MapRenderer {
     this.map = null;
     this.layer = null;
   }
+
   init(center, zoom = 12) {
     if (this.map) {
       this.map.remove();

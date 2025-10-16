@@ -4,11 +4,11 @@ dotenv.config();
 
 const API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 const candidateCountries = [
   { name: "중국", currency: "CNH" },
-  { name: "프랑스", currency: "EUR" },
+  { name: "유럽", currency: "EUR" },
   { name: "영국", currency: "GBP" },
   { name: "일본", currency: "JPY100" },
   { name: "태국", currency: "THB" },
@@ -24,19 +24,9 @@ const currencyUnitMap = {
   USD: 1, // 미국 달러 — 1단위
 };
 
-function analyzeRateTrend(currentRate, historicalRates) {
-  if (!historicalRates || historicalRates.length === 0) {
-    return "N/A";
-  }
+function analyzeRateTrend(trend) {
+  const trendPercentage = parseFloat(trend);
 
-  // 1. 과거 6개월 환율의 평균을 계산
-  const sum = historicalRates.reduce((acc, rate) => acc + rate, 0);
-  const average = sum / historicalRates.length;
-
-  // 2. 평균 대비 현재 환율의 변동률 계산
-  const trendPercentage = ((currentRate - average) / average) * 100;
-
-  // 3. 추세 판단 (원화 기준)
   let trendDirection = "";
   if (trendPercentage < -1) {
     trendDirection = "약세/유리"; // 해당 통화가치가 하락 -> 여행자에게 유리
@@ -46,7 +36,7 @@ function analyzeRateTrend(currentRate, historicalRates) {
     trendDirection = "보합세";
   }
 
-  return `${trendPercentage.toFixed(2)}% (${trendDirection})`;
+  return trendDirection;
 }
 
 export async function recommend({
@@ -60,25 +50,29 @@ export async function recommend({
   const end = new Date(endDate);
   // 두 날짜 간의 차이(밀리초)를 일수로 변환 (시작일과 종료일 모두 포함)
   const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  const today = new Date().toISOString().split("T")[0];
 
   const contextDataForPrompt = candidateCountries.map((country) => {
     const rates = exchangeRatesData[country.currency];
     const unit = currencyUnitMap[country.currency] || 1;
-    const trend = analyzeRateTrend(rates.current, rates.historical);
+    const trend = exchangeRatesData[country.currency].trend || "N/A";
+    const trendDirection = analyzeRateTrend(trend);
 
-    const currentExchangeRateDisplay = `${rates.current.toFixed(
-      2
-    )} KRW / ${unit} ${country.currency}`;
+    const currentExchangeRateDisplay = `${unit} ${
+      country.currency
+    } / ${rates.current.toFixed(2)} KRW`;
 
     return {
-      name: country.name,
-      currency: country.currency,
-      current_exchange_rate: currentExchangeRateDisplay,
-      exchange_rate_trend_6m_avg: trend,
+      name: country.name, // 나라 이름
+      currency: country.currency, // 나라 코드
+      current_exchange_rate: currentExchangeRateDisplay, // 현재 환율
+      exchange_rate_trend_6m_avg: trend, // 환율 추세
+      exchange_rate_trend_direction: trendDirection, // 추세 방향
     };
   });
 
   const contextDataString = JSON.stringify(contextDataForPrompt, null, 2);
+  console.log("data", contextDataString);
 
   const prompt = `
       # 역할
@@ -92,8 +86,10 @@ export async function recommend({
       candidateCountries 배열에 없는 국가는 어떤 이유로든 추천하지 마세요.
 
       # 사용자 정보
+      - 조회 시점 (오늘 날짜): ${today}
       - 여행 기간: ${startDate} 부터 ${endDate} 까지
       - 총 예산: ${budget}원(KRW)
+      - 1인당 예산: ${(budget / people).toLocaleString()}원 (KRW)
       - 인원: ${people}명
       - 기준 통화: KRW
 
@@ -102,27 +98,29 @@ export async function recommend({
 
       # 추가 과업: 여행 경비 추정
       주어진 환율 데이터 외에, 당신의 지식 기반을 활용하여 아래 항목을 추정해주세요.
-      1.  **1인당 평균 왕복 항공권 비용**: ${startDate} ~ ${endDate} 기간의 일반적인 비용을 추정하세요.
-      2.  **1박당 평균 숙소 비용**: 해당 국가의 에어비앤비 수준의 비용을 추정하세요.
-      3.  **1인당 일일 예상 경비**: 식비, 교통비, 관광비 등을 포함하여 약 100,000원을 기준으로 하되, 각 국가의 물가를 고려하여 적절히 조정하세요.
+      1. **1인당 평균 왕복 항공권 비용**: ${startDate} ~ ${endDate} 기간의 일반적인 비용을 추정하세요.
+      2. **1박당 평균 숙소 비용**: 해당 국가의 3성급 호텔 또는 에어비앤비 수준의 비용을 추정하세요.
+      3. **1인당 일일 예상 경비**: 식비, 교통비, 관광비 등을 포함하여 약 100,000원을 기준으로 하되, 각 국가의 물가를 고려하여 적절히 조정하세요.
 
       # 수행 규칙 및 논리
-      1.  'exchange_rate_trend_6m_avg' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
-      2.  과거 6개월의 환율 데이터를 이용해, 단순 선형 추세를 기반으로 다음 달 예상 환율을 추정하여 'forcasted_exchange_rate' 항목에 반영하세요.
-      3.  위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비('per_cost')**를 계산하세요.
-          -   **계산식: (추정 항공권 비용) + (추정 1박 숙소 비용 * ${durationDays}-1) + (조정된 일일 경비 * ${durationDays})**
-      4.  계산된 'per_cost'가 사용자의 1인당 예산(${
+      1. 'exchange_rate_trend_6m_avg' 항목과 'exchange_rate_trend_direction' 항목을 핵심적으로 분석하세요. 환율이 여행자에게 유리할수록 높은 점수를 부여하세요.
+      2. 'exchange_rate_trend_6m_avg', 'exchange_rate_trend_direction'에 나타난 추세와 1년 전 해당 달의 환율 변동을 기반으로 예상 환율을 추정하여 'forecasted_exchange_rate' 항목에 반영하세요.
+      3. 조회 시점('${today}')과 여행 시작일('${startDate}')의 연도와 월이 동일한지 확인하세요. 만약 연도와 월이 모두 같다면, 이는 매우 가까운 미래이므로 환율 예측이 무의미합니다. 이 경우에는 반드시 'forecasted_exchange_rate' 값을 'current_rate' 값과 동일하게 설정해야 합니다. 다른 경우에는 규칙 2번에 따라 예측을 수행하세요.
+      4. 위 '# 추가 과업'에서 추정한 비용들을 바탕으로 **1인당 총 예상 경비의 범위('per_cost_range')**를 계산하세요. 항공권과 숙소 비용의 변동성을 고려하여 최소값과 최대값을 포함하는 범위로 제시하세요.
+          - **계산식:** (추정 항공권 비용) + (추정 1박 숙소 비용 * (${durationDays}-1)) + (조정된 일일 경비 * ${durationDays}) 를 기준으로, 약 15% 내외의 변동폭을 적용하여 범위를 산출하세요.
+      5. 계산된 'per_cost_range'의 최소값이 사용자의 1인당 예산(${(
         budget / people
-      }원) 내에 들어오는지 확인하여 '예산 효율성'을 평가하세요.
-      5.  최종적으로 '예상 환율(유리함)', '예산 효율성'을 종합하여 가장 합리적인 상위 3개국을 추천하세요
+      ).toLocaleString()}원) 내에 들어오는지 확인하여 '예산 효율성'을 평가하세요.
+          - 예를들어 1200000 ~ 1500000과 같이 표기해주세요.
+      6. 최종적으로 '예상 환율(유리함)', '예산 효율성'을 종합하여 가장 합리적인 상위 3개국을 추천하세요
 
       # 출력 형식
       답변은 반드시 아래와 같은 JSON 형식으로만 제공해주세요. 다른 설명은 붙이지 마세요.
       {
         "recommendations": [
-          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forecasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
-          {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forecasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"},
-          {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "이 국가를 추천하는 상세한 이유(예산 및 환율 관점 포함)", "forecasted_exchange_rate": "예상 환율", "per_cost": "계산된 1인당 총 예상 경비"}
+          {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "exchange_rate_trend_6m_avg"},
+          {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "exchange_rate_trend_6m_avg"},
+          {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터에서 가져온 current_exchange_rate", "reason": "환율 예측에 대한 간략한 근거", "forecasted_exchange_rate": "예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "exchange_rate_trend_6m_avg"}
         ]
       }
     `;
