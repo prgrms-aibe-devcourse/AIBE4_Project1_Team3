@@ -1,5 +1,5 @@
 const USE_MOCK = false;
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://aibe4-project1-team3.onrender.com";
 
 /**
  * AI 여행 경로 추천 API 호출

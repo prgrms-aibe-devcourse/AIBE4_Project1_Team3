@@ -335,7 +335,7 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
   const formData = new FormData(e.target);
   const jsonData = Object.fromEntries(formData.entries());
 
-  const url = "http://localhost:3000";
+  const url = "https://aibe4-project1-team3.onrender.com";
 
   // 서버에 전송
   const res = await fetch(url + "/api/review/create", {
