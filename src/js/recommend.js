@@ -723,7 +723,7 @@ class AppController {
       travelDate.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil((travelDate - today) / (1000 * 60 * 60 * 24));
 
-      const apiBaseUrl = "http://localhost:3000";
+      const apiBaseUrl = "https://aibe4-project1-team3.onrender.com";
 
       console.log(`[날씨 로직] ${city}, 여행까지 ${diffDays}일`);
 

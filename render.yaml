@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: aibe4-project1-team3
+    env: node
+    buildCommand: "npm install"
+    startCommand: "node server/server.js"
+    plan: free
+    envVars:
+      - key: PORT
+        value: 10000

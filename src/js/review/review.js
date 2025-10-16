@@ -1,5 +1,5 @@
 // API 서버 주소
-const apiServerUrl = "http://localhost:3000";
+const apiServerUrl = "https://aibe4-project1-team3.onrender.com";
 
 let page = 1;
 let totalPages = 1;

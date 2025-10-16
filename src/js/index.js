@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
-  const apiBaseUrl = "http://localhost:3000";
+  const apiBaseUrl = "https://aibe4-project1-team3.onrender.com";
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
@@ -131,7 +131,7 @@ const currencyMap = {
 
 async function renderGraph() {
   const exchangeRatesData = {};
-  const response = await fetch("http://localhost:3000/api/exchange");
+  const response = await fetch("https://aibe4-project1-team3.onrender.com/api/exchange");
   const apiData = await response.json();
   const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
