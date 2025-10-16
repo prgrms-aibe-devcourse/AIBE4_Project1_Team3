@@ -3,6 +3,27 @@ let exchangeRatesData;
 document.addEventListener("DOMContentLoaded", async () => {
   exchangeRatesData = await renderGraph();
   console.log(exchangeRatesData);
+
+  const startDateInput = document.getElementById("startDate");
+  const endDateInput = document.getElementById("endDate");
+
+  const today = new Date().toISOString().split("T")[0];
+
+  startDateInput.setAttribute("min", today);
+
+  startDateInput.value = today;
+
+  startDateInput.addEventListener("change", function () {
+    const selectedStartDate = startDateInput.value;
+
+    endDateInput.setAttribute("min", selectedStartDate);
+
+    if (endDateInput.value < selectedStartDate) {
+      endDateInput.value = selectedStartDate;
+    }
+  });
+
+  endDateInput.setAttribute("min", startDateInput.value);
 });
 
 window.handleFormSubmit = async function (event) {
@@ -56,6 +77,19 @@ window.handleFormSubmit = async function (event) {
   }
 };
 
+function trendColor(rateChange) {
+  let trendColorClass;
+
+  if (rateChange < 0) {
+    trendColorClass = "bg-blue-100 text-blue-800"; // 하락 (좋음)
+  } else if (rateChange > 0) {
+    trendColorClass = "bg-red-100 text-red-800"; // 상승 (나쁨)
+  } else {
+    trendColorClass = "bg-gray-100 text-gray-800"; // 변화 없음
+  }
+  return trendColorClass;
+}
+
 function displayResults(recommendations) {
   const loadingP = document.getElementById("loading-message");
   if (loadingP) loadingP.classList.add("hidden");
@@ -77,8 +111,16 @@ function displayResults(recommendations) {
     document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
       rec.forecasted_exchange_rate.toLocaleString("ko-KR");
     document.getElementById(`reason-${rank}`).innerText = rec.reason;
-    document.getElementById(`per_cost-${rank}`).innerText =
-      rec.per_cost.toLocaleString("ko-KR") + "원";
+    document.getElementById(`per_cost_range-${rank}`).innerText =
+      rec.per_cost_range.toLocaleString("ko-KR") + "원";
+
+    const trendEl = document.getElementById(`trend-${rank}`);
+    const rateChange = rec.trend.replace("%", "");
+    trendEl.innerText = `${rateChange > 0 ? "+" : ""}${rec.trend}`;
+    let trendColorClass;
+
+    trendColorClass = trendColor(rateChange);
+    trendEl.classList.add(...trendColorClass.split(" "));
   });
 
   // 추천 루트 보기 버튼에 클릭 이벤트 추가
@@ -207,16 +249,10 @@ async function renderGraph() {
       historical: rateData
         .slice(0, rateData.length - 1)
         .map((value) => (value === null || value === undefined ? 0 : value)),
+      trend: trendText,
     };
 
-    let trendColorClass;
-    if (rateChange < 0) {
-      trendColorClass = "bg-blue-100 text-blue-800"; // 하락 (좋음)
-    } else if (rateChange > 0) {
-      trendColorClass = "bg-red-100 text-red-800"; // 상승 (나쁨)
-    } else {
-      trendColorClass = "bg-gray-100 text-gray-800"; // 변화 없음
-    }
+    const trendColorClass = trendColor(rateChange);
 
     const item = document.createElement("div");
     const canvasId = `chart-${code}`;
