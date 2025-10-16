@@ -65,10 +65,10 @@ router.get("/exchange", async (req, res) => {
       }
     });
 
-    // 데이터가 없는 날짜에 대해 모든 통화에 null이 채워지도록 보정
+    // 데이터가 없는 날짜에 대해 모든 통화에 0이 채워지도록 보정
     Object.keys(currencyData).forEach((code) => {
       if (currencyData[code].length !== results.length) {
-        const correctedData = new Array(results.length).fill(null);
+        const correctedData = new Array(results.length).fill(0);
         currencyData[code].forEach((rate, i) => (correctedData[i] = rate));
         currencyData[code] = correctedData;
       }

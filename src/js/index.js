@@ -120,6 +120,21 @@ initializeForm();
 
 // chart
 
+function getNextUpdateTime() {
+  const now = new Date();
+  const nextUpdate = new Date(now);
+
+  // 오늘 오전 11시로 설정
+  nextUpdate.setHours(11, 0, 0, 0);
+
+  // 만약 현재 시간이 11시를 지났다면, 다음 날 11시로 설정
+  if (now.getTime() >= nextUpdate.getTime()) {
+    nextUpdate.setDate(nextUpdate.getDate() + 1);
+  }
+
+  return nextUpdate.getTime();
+}
+
 const currencyMap = {
   USD: { name: "미국", unit: "달러" },
   EUR: { name: "유럽", unit: "유로" },
@@ -131,8 +146,50 @@ const currencyMap = {
 
 async function renderGraph() {
   const exchangeRatesData = {};
-  const response = await fetch("http://localhost:3000/api/exchange");
-  const apiData = await response.json();
+  const API_URL = "http://localhost:3000/api/exchange";
+  //const apiData = await response.json();
+  let apiData;
+
+  const cachedData = sessionStorage.getItem("exchangeData");
+  const cacheExpires = sessionStorage.getItem("exchangeExpires");
+  const now = Date.now();
+
+  // 만료 시간을 숫자로 변환 (변환 실패 시 0으로 처리하여 무효화)
+  const expiresTime = cacheExpires ? Number(cacheExpires) : 0;
+
+  if (expiresTime > now && cachedData && expiresTime) {
+    console.log("Session Storage에서 캐시된 데이터 로드");
+    apiData = JSON.parse(cachedData);
+  } else {
+    // 2. 캐시 만료 또는 없음: 실제 API 호출
+    try {
+      console.log("환율 API 호출 시작");
+      const response = await fetch(API_URL);
+      apiData = await response.json();
+
+      // 3. 캐시 업데이트 및 저장
+      if (apiData && apiData.labels && apiData.labels.length > 0) {
+        const nextUpdateTimestamp = getNextUpdateTime();
+        sessionStorage.setItem("exchangeData", JSON.stringify(apiData));
+        sessionStorage.setItem(
+          "exchangeExpires",
+          nextUpdateTimestamp.toString()
+        );
+        console.log(
+          `새 데이터 저장. 다음 갱신 시간: ${new Date(
+            nextUpdateTimestamp
+          ).toLocaleString()}`
+        );
+      } else {
+        console.error("API에서 유효하지 않은 데이터 수신. 캐시하지 않음.");
+        return {}; // 빈 객체 반환
+      }
+    } catch (error) {
+      console.error("API 호출 실패:", error);
+      return {};
+    }
+  }
+
   const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
   console.log(apiData);
