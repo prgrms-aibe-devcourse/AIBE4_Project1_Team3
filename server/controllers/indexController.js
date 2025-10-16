@@ -52,8 +52,13 @@ router.get("/exchange", async (req, res) => {
       const searchDate = days[index];
       labels.push(searchDate.slice(4, 6) + "월");
 
-      if (data) {
+      if (data && Array.isArray(data)) {
         data.forEach((item) => {
+          // deal_bas_r이 null이거나 undefined이거나 문자열이 아닌 경우 처리
+          if (!item || !item.deal_bas_r || typeof item.deal_bas_r !== 'string') {
+            return;
+          }
+
           let code = item.cur_unit === "JPY(100)" ? "JPY100" : item.cur_unit;
           const rate = parseFloat(item.deal_bas_r.replace(/,/g, ""));
 
