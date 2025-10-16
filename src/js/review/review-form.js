@@ -333,23 +333,30 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
 
   // Form → JSON 변환
   const formData = new FormData(e.target);
-  const jsonData = Object.fromEntries(formData.entries());
+  const pwd = formData.get("password");
 
-  const url = "http://localhost:3000";
-
-  // 서버에 전송
-  const res = await fetch(url + "/api/review/create", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(jsonData),
-  });
-
-  const result = await res.json();
-
-  if (result.success) {
-    alert("리뷰가 등록되었습니다!");
-    window.location.href = "/src/review.html";
+  if (pwd.length != 4) {
+    alert("비밀번호는 4자리여야 합니다.");
+    return;
   } else {
-    alert("등록 실패: " + result.error);
+    const jsonData = Object.fromEntries(formData.entries());
+
+    const url = "http://localhost:3000";
+
+    // 서버에 전송
+    const res = await fetch(url + "/api/review/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(jsonData),
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      alert("리뷰가 등록되었습니다!");
+      window.location.href = "/src/review.html";
+    } else {
+      alert("등록 실패: " + result.error);
+    }
   }
 });
