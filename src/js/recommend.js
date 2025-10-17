@@ -624,6 +624,8 @@ class AppController {
     this.budget = document.getElementById("travelBudget");
     this.city = document.getElementById("travelCity");
     this.reviewBtn = document.getElementById("reviewBtn");
+
+    this.averageWeather = null; // 평균 날씨 정보 저장 (5일 이후 날짜에 사용)
   }
   init() {
     if (this.budget)
@@ -842,6 +844,15 @@ class AppController {
           if (dayResponse && dayResponse.dayPlan) {
             allDayPlans.push(dayResponse.dayPlan);
 
+            // Day 1 응답에서 평균 날씨 정보 저장
+            if (dayNum === 1 && dayResponse.averageWeather) {
+              this.averageWeather = dayResponse.averageWeather;
+              console.log(
+                "[날씨] Day1 응답에서 평균 날씨 정보 저장:",
+                this.averageWeather
+              );
+            }
+
             // 현재까지 로드된 일정 표시
             const currentItinerary = {
               city: dayResponse.city || city,
@@ -863,7 +874,7 @@ class AppController {
               this.rightPanel.style.display = null;
               setTimeout(() => this.map.map.invalidateSize(), 0);
 
-              // 날씨 정보 로드 시작
+              // 날씨 정보 로드 시작 (평균 날씨 정보 전달)
               const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
               const weatherLat = firstStop?.lat || 34.6937;
               const weatherLng = firstStop?.lng || 135.5023;
@@ -874,7 +885,7 @@ class AppController {
                 lat: weatherLat,
                 lng: weatherLng,
                 startDate: startDate,
-                averageWeather: null,
+                averageWeather: this.averageWeather,
               }).catch((err) => {
                 console.warn("날씨 로드 실패:", err);
               });
@@ -910,7 +921,7 @@ class AppController {
           lat: firstStop?.lat || 34.6937,
           lng: firstStop?.lng || 135.5023,
           startDate: startDate,
-          averageWeather: null,
+          averageWeather: this.averageWeather,  // ✅ 저장된 평균 날씨 사용
         }).catch(() => null);
 
         this.saveToSessionStorage(finalItinerary, formData, weatherData);
@@ -944,6 +955,15 @@ class AppController {
         if (dayResponse && dayResponse.dayPlan) {
           allDayPlans.push(dayResponse.dayPlan);
 
+          // Day 1 응답에서 평균 날씨 정보 저장
+          if (dayNum === 1 && dayResponse.averageWeather) {
+            this.averageWeather = dayResponse.averageWeather;
+            console.log(
+              "[날씨] Day1 응답에서 평균 날씨 정보 저장:",
+              this.averageWeather
+            );
+          }
+
           // 현재까지 로드된 일정 표시
           const currentItinerary = {
             city: dayResponse.city || city,
@@ -965,7 +985,7 @@ class AppController {
             this.rightPanel.style.display = null;
             setTimeout(() => this.map.map.invalidateSize(), 0);
 
-            // 날씨 정보 로드 시작
+            // 날씨 정보 로드 시작 (평균 날씨 정보 전달)
             const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
             const weatherLat = firstStop?.lat || 34.6937;
             const weatherLng = firstStop?.lng || 135.5023;
@@ -976,7 +996,7 @@ class AppController {
               lat: weatherLat,
               lng: weatherLng,
               startDate: startDate,
-              averageWeather: null,
+              averageWeather: this.averageWeather,
             }).catch((err) => {
               console.warn("날씨 로드 실패:", err);
             });
@@ -1039,7 +1059,7 @@ class AppController {
           lat: firstStop?.lat || 34.6937,
           lng: firstStop?.lng || 135.5023,
           startDate: startDate,
-          averageWeather: null,
+          averageWeather: this.averageWeather,  // ✅ 저장된 평균 날씨 사용
         }).catch(() => null);
 
         // 추천 결과를 sessionStorage에 저장
@@ -1074,9 +1094,22 @@ class AppController {
 
   /**
    * 날씨 정보를 가져와서 화면에 렌더링합니다.
-   * - 5일 이내: OpenWeatherMap 실시간 예보
-   * - 5일 이후: AI가 제공한 평균 날씨 사용
-   * @returns {Promise<Object|null>} 날씨 데이터 (세션 저장용)
+   *
+   * 동작 방식:
+   * 1. 여행 날짜가 오늘 기준 5일 이내인 경우
+   *    → OpenWeatherMap API를 통해 실시간 날씨 예보 제공
+   * 2. 여행 날짜가 오늘 기준 5일 이후인 경우
+   *    → AI가 생성한 해당 도시/월의 평균 날씨 정보 사용 (averageWeather)
+   * 3. 실시간 날씨 API 실패 시
+   *    → averageWeather가 있으면 폴백으로 사용
+   *
+   * @param {Object} params - 날씨 조회 파라미터
+   * @param {string} params.city - 도시 이름
+   * @param {number} params.lat - 위도
+   * @param {number} params.lng - 경도
+   * @param {string} params.startDate - 여행 시작 날짜 (YYYY-MM-DD)
+   * @param {Object|null} params.averageWeather - AI가 생성한 평균 날씨 정보 (Day1 응답에 포함)
+   * @returns {Promise<Object|null>} 날씨 데이터 (localStorage 저장용)
    */
   async fetchAndRenderWeather({ city, lat, lng, startDate, averageWeather }) {
     try {
@@ -1088,7 +1121,7 @@ class AppController {
 
       console.log(`[날씨 로직] ${city}, 여행까지 ${diffDays}일`);
 
-      // 5일 이내: 실시간 날씨 API 호출
+      // 5일 이내: 실시간 날씨 API 호출 (OpenWeatherMap 제공)
       if (diffDays >= 0 && diffDays <= 5) {
         const params = new URLSearchParams({
           city,
@@ -1223,6 +1256,15 @@ class AppController {
           if (dayResponse && dayResponse.dayPlan) {
             allDayPlans.push(dayResponse.dayPlan);
 
+            // Day 1 응답에서 평균 날씨 정보 저장
+            if (dayNum === 1 && dayResponse.averageWeather) {
+              this.averageWeather = dayResponse.averageWeather;
+              console.log(
+                "[날씨] Day1 응답에서 평균 날씨 정보 저장:",
+                this.averageWeather
+              );
+            }
+
             // 현재까지 로드된 일정 표시
             const currentItinerary = {
               city: dayResponse.city || city,
@@ -1244,7 +1286,7 @@ class AppController {
               this.rightPanel.style.display = null;
               setTimeout(() => this.map.map.invalidateSize(), 0);
 
-              // 날씨 정보 로드 시작
+              // 날씨 정보 로드 시작 (평균 날씨 정보 전달)
               const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
               const weatherLat = firstStop?.lat || 34.6937;
               const weatherLng = firstStop?.lng || 135.5023;
@@ -1255,7 +1297,7 @@ class AppController {
                 lat: weatherLat,
                 lng: weatherLng,
                 startDate: start,
-                averageWeather: null,
+                averageWeather: this.averageWeather,
               }).catch((err) => {
                 console.warn("날씨 로드 실패:", err);
               });
@@ -1291,7 +1333,7 @@ class AppController {
           lat: firstStop?.lat || 34.6937,
           lng: firstStop?.lng || 135.5023,
           startDate: start,
-          averageWeather: null,
+          averageWeather: this.averageWeather,  // ✅ 저장된 평균 날씨 사용
         }).catch(() => null);
 
         this.saveToSessionStorage(finalItinerary, formData, weatherData);
@@ -1325,6 +1367,15 @@ class AppController {
         if (dayResponse && dayResponse.dayPlan) {
           allDayPlans.push(dayResponse.dayPlan);
 
+          // Day 1 응답에서 평균 날씨 정보 저장
+          if (dayNum === 1 && dayResponse.averageWeather) {
+            this.averageWeather = dayResponse.averageWeather;
+            console.log(
+              "[날씨] Day1 응답에서 평균 날씨 정보 저장:",
+              this.averageWeather
+            );
+          }
+
           // 현재까지 로드된 일정 표시
           const currentItinerary = {
             city: dayResponse.city || city,
@@ -1346,7 +1397,7 @@ class AppController {
             this.rightPanel.style.display = null;
             setTimeout(() => this.map.map.invalidateSize(), 0);
 
-            // 날씨 정보 로드 시작
+            // 날씨 정보 로드 시작 (평균 날씨 정보 전달)
             const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
             const weatherLat = firstStop?.lat || 34.6937;
             const weatherLng = firstStop?.lng || 135.5023;
@@ -1357,7 +1408,7 @@ class AppController {
               lat: weatherLat,
               lng: weatherLng,
               startDate: start,
-              averageWeather: null,
+              averageWeather: this.averageWeather,
             }).catch((err) => {
               console.warn("날씨 로드 실패:", err);
             });
@@ -1421,7 +1472,7 @@ class AppController {
         lat: firstStop?.lat || 34.6937,
         lng: firstStop?.lng || 135.5023,
         startDate: start,
-        averageWeather: null,
+        averageWeather: this.averageWeather,  // ✅ 저장된 평균 날씨 사용
       }).catch(() => null);
 
       // 추천 결과를 sessionStorage에 저장
