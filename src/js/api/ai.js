@@ -1,5 +1,24 @@
+/**
+ * 환경별 API Base URL 자동 설정
+ * - 개발 환경 (localhost): http://localhost:10000
+ * - 배포 환경 (production): https://aibe4-project1-team3.onrender.com
+ */
+const API_BASE = (() => {
+  const hostname = window.location.hostname;
+
+  // 로컬 개발 환경
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return "http://localhost:10000";
+  }
+
+  // 배포 환경 (Render)
+  return "https://aibe4-project1-team3.onrender.com";
+})();
+
 const USE_MOCK = false;
-const API_BASE = "https://aibe4-project1-team3.onrender.com";
+
+console.log(`[API Config] 현재 환경: ${window.location.hostname}`);
+console.log(`[API Config] API Base URL: ${API_BASE}`);
 
 /**
  * AI 여행 경로 추천 API 호출

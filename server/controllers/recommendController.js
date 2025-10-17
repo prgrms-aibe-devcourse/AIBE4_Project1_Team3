@@ -534,6 +534,7 @@ async function generateSingleDay(dayNum, { city, startDate, endDate, people, bud
   const currencyInfo = getCurrencyInfo(city);
   const { currency, currencyCode, symbol, rate: fx } = currencyInfo;
 
+  const travelMonth = s.getMonth() + 1; //여행 월 계산 (평균 날씨 정보 생성용)
   let daySpecificRules = "";
   if (dayNum === 1) {
     daySpecificRules = `
@@ -549,14 +550,35 @@ async function generateSingleDay(dayNum, { city, startDate, endDate, people, bud
 - 관광/쇼핑/액티비티 5~8개 포함.`;
   }
 
+  /**
+   * AI 프롬프트 생성
+   * - Day 1인 경우: averageWeather 필드를 포함하도록 특별 요청
+   *   → 프론트엔드에서 5일 이후 날씨 조회 시 사용
+   * - Day 2~4: 일반 일정만 생성
+   */
   const prompt = `
 너는 전문 여행 플래너다.
 "${city}" ${days}일 여행 중 **Day ${dayNum}** 일정만 JSON 한 줄로 만들어라(설명/코드블록/줄바꿈 금지).
 1인 기준 예산: ${Math.round(budgetPerPerson / days)}원 정도.
 현지 통화: ${currency}(${currencyCode}, ${symbol}), 환율: 1${currency}=${fx}원
 
+${dayNum === 1 ? `
+**[중요] Day 1 특별 요구사항 - averageWeather 필드 필수 생성:**
+반드시 아래 형식의 averageWeather 필드를 JSON 응답에 포함해야 한다!
+"${city}" 도시의 ${travelMonth}월 평균 날씨 정보 (과거 30년 평균 기후 데이터 기반):
+- month: ${travelMonth}
+- tempHigh: 최고 기온 (°C, 정수)
+- tempLow: 최저 기온 (°C, 정수)
+- precipitation: 평균 강수량 (mm, 정수)
+- rainyDays: 평균 강수일 (일, 정수)
+- season: 계절감 (예: "초가을", "한겨울", "봄" 등)
+- tip: 여행 팁 (예: "가을 여행 최적기! 긴팔과 얇은 재킷을 준비하세요.")
+
+※ averageWeather는 5일 이후 날짜 선택 시 사용되므로 반드시 포함 필수!
+` : ''}
+
 스키마:
-{"day":${dayNum},"title":"호기심을 자극하는 타이틀","dayReason":"...","stops":[{"placeName":"...","summary":"<=50자","reason":"<=120자","costReason":"상세한 비용 근거","estimatedCost":50000,"lat":35.0,"lng":135.0,"category":"breakfast|lunch|dinner|sightseeing|shopping|activity|nightlife|airport|transfer","timeSlot":"morning|late_morning|afternoon|tea|evening|night","tags":["..."]}, ...]}
+{"day":${dayNum},"title":"호기심을 자극하는 타이틀","dayReason":"...","stops":[{"placeName":"...","summary":"<=50자","reason":"<=120자","costReason":"상세한 비용 근거","estimatedCost":50000,"lat":35.0,"lng":135.0,"category":"breakfast|lunch|dinner|sightseeing|shopping|activity|nightlife|airport|transfer","timeSlot":"morning|late_morning|afternoon|tea|evening|night","tags":["..."]}, ...]${dayNum === 1 ? `,"averageWeather":{"month":${travelMonth},"tempHigh":22,"tempLow":16,"precipitation":110,"rainyDays":9,"season":"초가을","tip":"여행하기 좋은 날씨입니다."}` : ''}}
 
 규칙:
 ${daySpecificRules}
@@ -568,6 +590,10 @@ ${daySpecificRules}
 - timeSlot은 실제 시간 순서(morning→late_morning→afternoon→tea→evening→night)로 증가.
 - 실존 좌표(lat,lng) 사용.
 - category는 "airport"|"transfer"|"breakfast"|"lunch"|"dinner"|"sightseeing"|"shopping"|"activity"|"nightlife"|"cafe"|"snack" 중 하나.
+${dayNum === 1 ? `
+**[Day 1 필수] averageWeather 필드를 절대 빠뜨리지 마라!**
+반드시 JSON 응답에 "averageWeather" 객체를 포함해야 한다.
+` : ''}
 
 **[필수] JSON 형식 규칙 (절대 위반 금지):**
 - 모든 숫자 필드(estimatedCost, lat, lng)는 숫자 타입만 사용 (문자열 금지)
@@ -621,7 +647,21 @@ ${daySpecificRules}
 
       console.log(`[Day${dayNum}] 텍스트 길이: ${text.length}자`);
 
+      // Day 1인 경우 AI 응답 전체를 로깅
+      if (dayNum === 1) {
+        console.log(`[Day1 AI 응답 원본 - 전체]\n${text}`);
+      }
+
       parsed = parseJSON(text);
+
+      // Day 1인 경우 파싱 결과도 로깅
+      if (dayNum === 1 && parsed) {
+        console.log(`[Day1 파싱 결과] 키 목록:`, Object.keys(parsed));
+        console.log(`[Day1 파싱 결과] averageWeather 존재:`, !!parsed.averageWeather);
+        if (parsed.averageWeather) {
+          console.log(`[Day1 파싱 결과] averageWeather 내용:`, JSON.stringify(parsed.averageWeather));
+        }
+      }
       if (!parsed || !Array.isArray(parsed.stops)) {
         console.error(`[Day${dayNum} 시도 ${attempt}] JSON 파싱 실패`);
         lastError = new Error(`Day${dayNum} JSON 파싱 실패`);
@@ -656,7 +696,7 @@ ${daySpecificRules}
 
   const fixedDay = ensureReasons({ dayPlans: [{ ...parsed, day: dayNum }] }).dayPlans[0];
 
-  return {
+  const result = {
     city,
     currency,
     currencyCode,
@@ -665,6 +705,24 @@ ${daySpecificRules}
     budgetModel: "per_person",
     dayPlan: fixedDay
   };
+
+  /**
+   * Day 1인 경우 평균 날씨 정보를 응답에 포함
+   * - AI가 생성한 averageWeather를 프론트엔드로 전달
+   * - 프론트엔드에서 this.averageWeather에 저장 후 5일 이후 날짜 조회 시 사용
+   */
+  if (dayNum === 1) {
+    console.log(`[Day1 최종 결과] parsed.averageWeather 존재 여부:`, !!parsed.averageWeather);
+    if (parsed.averageWeather) {
+      console.log(`[Day1 최종 결과] averageWeather를 result에 포함:`, parsed.averageWeather);
+      result.averageWeather = parsed.averageWeather;
+    } else {
+      console.error(`[Day1 최종 결과] ❌ AI 응답에 averageWeather가 없습니다!`);
+      console.error(`[Day1 최종 결과] AI에게 averageWeather 생성을 요청했으나 응답에 포함되지 않음`);
+    }
+  }
+
+  return result;
 }
 
 // Day1 엔드포인트
