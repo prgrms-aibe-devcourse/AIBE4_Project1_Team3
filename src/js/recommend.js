@@ -1,9 +1,8 @@
-import { getAiRecommendation } from "./api/ai.js";
-import { showLoading, hideLoading } from "./components/loading.js";
+import { getAiDayNRecommendation, getAiRemainingRecommendation } from "./api/ai.js";
+import { showLoading, hideLoading, updateLoadingMessage } from "./components/loading.js";
 import {
   formatCurrency,
   stripDigits,
-  formatDate,
   getCurrencySymbol,
 } from "./utils/format.js";
 import { sanitizePlan } from "./utils/sanitizePlan.js";
@@ -167,6 +166,11 @@ class MapRenderer {
     dayPlans.forEach((dp, di) => {
       const latLngs = [];
       (dp.stops || []).forEach((s, si) => {
+        // 좌표값 유효성 검증
+        if (!s || !isFinite(s.lat) || !isFinite(s.lng)) {
+          console.warn(`[지도 렌더링] Day ${dp.day} Stop ${si + 1}: 유효하지 않은 좌표`, s);
+          return;
+        }
         const latlng = [s.lat, s.lng];
         latLngs.push(latlng);
         allPts.push(latlng);
@@ -199,6 +203,11 @@ class MapRenderer {
     const allPts = [];
 
     (dayPlan.stops || []).forEach((s, si) => {
+      // 좌표값 유효성 검증
+      if (!s || !isFinite(s.lat) || !isFinite(s.lng)) {
+        console.warn(`[지도 렌더링] Day ${dayPlan.day} Stop ${si + 1}: 유효하지 않은 좌표`, s);
+        return;
+      }
       const latlng = [s.lat, s.lng];
       latLngs.push(latlng);
       allPts.push(latlng);
@@ -337,7 +346,7 @@ class RecommendationRenderer {
           ${cbHTML}
         </div>
         <span class="cost">${
-          stopSum === 0 ? "무료" : formatCurrency(stopSum)
+          stopSum === 0 ? "무료" : `₩${stopSum.toLocaleString("ko-KR")}`
         }</span>
       </li>`;
   }
@@ -421,6 +430,14 @@ class RecommendationRenderer {
       this.city = itinerary.city;
     }
 
+    // 렌더링 전에 현재 열려있는 카드들의 상태 저장
+    const openStates = [];
+    const existingCards = this.container.querySelectorAll(".route-card");
+    existingCards.forEach((card, index) => {
+      const body = card.querySelector(".route-card__body");
+      openStates[index] = body && body.style.display !== "none";
+    });
+
     const daySums = this.calculateDaySums(days);
     const avgDaily = daySums.length
       ? Math.round(daySums.reduce((a, b) => a + b, 0) / daySums.length)
@@ -431,6 +448,15 @@ class RecommendationRenderer {
         this.renderDayCard(dp, daySums[idx] || 0, avgDaily, city)
       )
       .join("");
+
+    // 렌더링 후에 이전에 열려있던 카드들의 상태 복원
+    const newCards = this.container.querySelectorAll(".route-card");
+    newCards.forEach((card, index) => {
+      const body = card.querySelector(".route-card__body");
+      if (body && openStates[index]) {
+        body.style.display = "block";
+      }
+    });
 
     this.attachCardToggleEvents(days, map);
   }
@@ -635,11 +661,11 @@ class AppController {
       const savedWeather = localStorage.getItem("recommendWeather");
 
       if (!savedItinerary || !savedFormData) {
-        console.log("✅ 캐시에서 불러올 데이터가 없습니다.");
+        console.log("캐시에서 불러올 데이터가 없습니다.");
         return;
       }
 
-      console.log("✅ 캐시 데이터 감지 — 즉시 렌더링");
+      console.log("캐시 데이터 감지 — 즉시 렌더링");
 
       const itinerary = JSON.parse(savedItinerary);
       const formData = JSON.parse(savedFormData);
@@ -679,7 +705,7 @@ class AppController {
         window.location.href = "/review-form.html";
       });
 
-      console.log("✅ 캐시 복원 완료");
+      console.log("캐시 복원 완료");
     } catch (err) {
       console.error(" 캐시 복원 오류:", err);
       // 오류 발생 시 저장된 데이터 삭제
@@ -699,7 +725,7 @@ class AppController {
       if (weather) {
         localStorage.setItem("recommendWeather", JSON.stringify(weather));
       }
-      console.log("✅ localStorage에 캐시 저장 완료");
+      console.log("localStorage에 캐시 저장 완료");
     } catch (err) {
       console.error("localStorage 저장 오류:", err);
     }
@@ -776,69 +802,212 @@ class AppController {
     showLoading(this.loading);
     this.rightPanel.style.display = "none";
 
-    try {
-      const itinerary = await getAiRecommendation({
-        city,
-        startDate,
-        endDate,
-        people,
-        budget: budgetNum,
-      });
+    // 전체 일수 계산
+    const totalDays = Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1);
 
-      if (!itinerary || !itinerary.dayPlans || !itinerary.dayPlans.length) {
-        throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
+    try {
+      const fx = 9.5;
+      const params = { city, startDate, endDate, people, budget: budgetNum };
+
+      // 4일 이하: 순차 로딩
+      if (totalDays <= 4) {
+        const allDayPlans = [];
+
+        // Day 1~4까지 순차적으로 로드
+        for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+          updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
+
+          const dayResponse = await getAiDayNRecommendation(dayNum, params);
+
+          if (dayResponse && dayResponse.dayPlan) {
+            allDayPlans.push(dayResponse.dayPlan);
+
+            // 현재까지 로드된 일정 표시
+            const currentItinerary = {
+              city: dayResponse.city || city,
+              dayPlans: [...allDayPlans]
+            };
+
+            sanitizePlan(currentItinerary, fx);
+            const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
+            const displayData = { city: currentItinerary.city, dayPlans: optimized };
+
+            // 첫 Day 로드 시 지도 초기화
+            if (dayNum === 1) {
+              this.map.init([34.6937, 135.5023], 11);
+              this.rightPanel.style.display = null;
+              setTimeout(() => this.map.map.invalidateSize(), 0);
+
+              // 날씨 정보 로드 시작
+              const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
+              const weatherLat = firstStop?.lat || 34.6937;
+              const weatherLng = firstStop?.lng || 135.5023;
+
+              this.weather.showLoading();
+              this.fetchAndRenderWeather({
+                city: displayData.city,
+                lat: weatherLat,
+                lng: weatherLng,
+                startDate: startDate,
+                averageWeather: null,
+              }).catch(err => {
+                console.warn("날씨 로드 실패:", err);
+              });
+            }
+
+            // 카드와 지도 업데이트
+            this.cards.render(displayData, this.map);
+            this.map.renderDayPlans(displayData.dayPlans);
+
+            console.log(`✅ Day${dayNum} 일정 표시 완료`);
+          }
+        }
+
+        // 최종 데이터 저장
+        const finalItinerary = {
+          city: city,
+          dayPlans: allDayPlans
+        };
+        sanitizePlan(finalItinerary, fx);
+
+        const formData = { city, startDate, endDate, people, budget: budgetNum };
+
+        // 날씨 정보 가져오기
+        const firstStop = finalItinerary.dayPlans?.[0]?.stops?.[0];
+        const weatherData = await this.fetchAndRenderWeather({
+          city: finalItinerary.city,
+          lat: firstStop?.lat || 34.6937,
+          lng: firstStop?.lng || 135.5023,
+          startDate: startDate,
+          averageWeather: null,
+        }).catch(() => null);
+
+        this.saveToSessionStorage(finalItinerary, formData, weatherData);
+
+        this.reviewBtn.hidden = false;
+        this.reviewBtn.addEventListener("click", () => {
+          sessionStorage.setItem("reviewCourse", JSON.stringify(finalItinerary));
+          window.location.href = "/review-form.html";
+        });
+
+        console.log("✅ 순차 로딩 완료");
+        return;
       }
 
-      const fx = 9.5;
-      sanitizePlan(itinerary, fx);
+      // 5일 이상: Day 1~4 순차 로딩 + 나머지 일괄 로딩
+      const allDayPlans = [];
 
-      const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
-      const finalItin = { city: itinerary.city || city, dayPlans: optimized };
+      // Step 1: Day 1~4까지 순차적으로 로드
+      const sequentialDays = Math.min(4, totalDays);
+      for (let dayNum = 1; dayNum <= sequentialDays; dayNum++) {
+        updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
 
-      sanitizePlan(finalItin, fx);
+        const dayResponse = await getAiDayNRecommendation(dayNum, params);
 
-      this.map.init([34.6937, 135.5023], 11);
-      this.cards.render(finalItin, this.map);
-      this.map.renderDayPlans(finalItin.dayPlans);
+        if (dayResponse && dayResponse.dayPlan) {
+          allDayPlans.push(dayResponse.dayPlan);
 
-      // 오른쪽 패널 표시 (맵 + 날씨 영역 표시)
-      this.rightPanel.style.display = null;
-      setTimeout(() => this.map.map.invalidateSize(), 0);
+          // 현재까지 로드된 일정 표시
+          const currentItinerary = {
+            city: dayResponse.city || city,
+            dayPlans: [...allDayPlans]
+          };
 
-      // 날씨 정보 로딩 시작
-      this.weather.showLoading();
+          sanitizePlan(currentItinerary, fx);
+          const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
+          const displayData = { city: currentItinerary.city, dayPlans: optimized };
 
-      // AI 응답의 첫 번째 장소 좌표 추출
-      const firstStop = finalItin.dayPlans?.[0]?.stops?.[0];
-      const weatherLat = firstStop?.lat || 34.6937;
-      const weatherLng = firstStop?.lng || 135.5023;
+          // 첫 Day 로드 시 지도 초기화
+          if (dayNum === 1) {
+            this.map.init([34.6937, 135.5023], 11);
+            this.rightPanel.style.display = null;
+            setTimeout(() => this.map.map.invalidateSize(), 0);
 
-      // 폼 데이터 저장 (세션 저장용)
-      const formData = {
-        city: finalItin.city,
-        startDate,
-        endDate,
-        people,
-        budget: budgetNum,
-      };
+            // 날씨 정보 로드 시작
+            const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
+            const weatherLat = firstStop?.lat || 34.6937;
+            const weatherLng = firstStop?.lng || 135.5023;
 
-      // 날씨 정보 가져오기 및 세션 저장
-      const weatherData = await this.fetchAndRenderWeather({
-        city: finalItin.city,
-        lat: weatherLat,
-        lng: weatherLng,
-        startDate: startDate,
-        averageWeather: itinerary.averageWeather,
-      });
+            this.weather.showLoading();
+            this.fetchAndRenderWeather({
+              city: displayData.city,
+              lat: weatherLat,
+              lng: weatherLng,
+              startDate: startDate,
+              averageWeather: null,
+            }).catch(err => {
+              console.warn("날씨 로드 실패:", err);
+            });
+          }
 
-      // 추천 결과를 sessionStorage에 저장
-      this.saveToSessionStorage(finalItin, formData, weatherData);
+          // 카드와 지도 업데이트
+          this.cards.render(displayData, this.map);
+          this.map.renderDayPlans(displayData.dayPlans);
 
-      this.reviewBtn.hidden = false;
-      this.reviewBtn.addEventListener("click", () => {
-        sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
-        window.location.href = "/review-form.html";
-      });
+          console.log(` Day${dayNum} 일정 표시 완료`);
+        }
+      }
+
+      // Step 2: Day 5+ 일괄 로딩 (나머지 일정만 가져오기)
+      if (totalDays > 4) {
+        updateLoadingMessage(this.loading, `나머지 ${totalDays - 4}일 생성 중...`);
+
+        const remainingResponse = await getAiRemainingRecommendation(params);
+
+        if (!remainingResponse || !Array.isArray(remainingResponse.dayPlans)) {
+          throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
+        }
+
+        // Day 5+ 일정을 기존 allDayPlans에 추가
+        allDayPlans.push(...remainingResponse.dayPlans);
+
+        // 전체 일정 생성
+        const finalItin = {
+          city: remainingResponse.city || city,
+          dayPlans: allDayPlans
+        };
+
+        sanitizePlan(finalItin, fx);
+
+        const optimized = ItineraryPlanner.optimizeAll(finalItin.dayPlans);
+        const displayData = { city: finalItin.city, dayPlans: optimized };
+
+        sanitizePlan(displayData, fx);
+
+        // 전체 일정으로 화면 업데이트
+        this.cards.render(displayData, this.map);
+        this.map.renderDayPlans(displayData.dayPlans);
+
+        // 폼 데이터 저장 (세션 저장용)
+        const formData = {
+          city: displayData.city,
+          startDate,
+          endDate,
+          people,
+          budget: budgetNum,
+        };
+
+        // 날씨 정보 가져오기 및 세션 저장
+        const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
+        const weatherData = await this.fetchAndRenderWeather({
+          city: displayData.city,
+          lat: firstStop?.lat || 34.6937,
+          lng: firstStop?.lng || 135.5023,
+          startDate: startDate,
+          averageWeather: null,
+        }).catch(() => null);
+
+        // 추천 결과를 sessionStorage에 저장
+        this.saveToSessionStorage(displayData, formData, weatherData);
+
+        this.reviewBtn.hidden = false;
+        this.reviewBtn.addEventListener("click", () => {
+          sessionStorage.setItem("reviewCourse", JSON.stringify(displayData));
+          window.location.href = "/review-form.html";
+        });
+
+        console.log("5일+ 나머지 일정 로딩 완료");
+      }
     } catch (err) {
       console.error("AI 추천 오류:", err);
 
@@ -979,46 +1148,186 @@ class AppController {
     showLoading(this.loading);
     this.rightPanel.style.display = "none";
 
-    try {
-      const itinerary = await getAiRecommendation({
-        city,
-        startDate: start,
-        endDate: end,
-        people,
-        budget: budgetNum,
-      });
+    // 전체 일수 계산
+    const totalDays = Math.max(1, Math.round((new Date(end) - new Date(start)) / 86400000) + 1);
 
-      if (!itinerary || !itinerary.dayPlans || !itinerary.dayPlans.length) {
-        throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
+    try {
+      const fx = 9.5;
+      const params = { city, startDate: start, endDate: end, people, budget: budgetNum };
+
+      // 4일 이하: 순차 로딩
+      if (totalDays <= 4) {
+        const allDayPlans = [];
+
+        // Day 1~4까지 순차적으로 로드
+        for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+          updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
+
+          const dayResponse = await getAiDayNRecommendation(dayNum, params);
+
+          if (dayResponse && dayResponse.dayPlan) {
+            allDayPlans.push(dayResponse.dayPlan);
+
+            // 현재까지 로드된 일정 표시
+            const currentItinerary = {
+              city: dayResponse.city || city,
+              dayPlans: [...allDayPlans]
+            };
+
+            sanitizePlan(currentItinerary, fx);
+            const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
+            const displayData = { city: currentItinerary.city, dayPlans: optimized };
+
+            // 첫 Day 로드 시 지도 초기화
+            if (dayNum === 1) {
+              this.map.init([34.6937, 135.5023], 11);
+              this.rightPanel.style.display = null;
+              setTimeout(() => this.map.map.invalidateSize(), 0);
+
+              // 날씨 정보 로드 시작
+              const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
+              const weatherLat = firstStop?.lat || 34.6937;
+              const weatherLng = firstStop?.lng || 135.5023;
+
+              this.weather.showLoading();
+              this.fetchAndRenderWeather({
+                city: displayData.city,
+                lat: weatherLat,
+                lng: weatherLng,
+                startDate: start,
+                averageWeather: null,
+              }).catch(err => {
+                console.warn("날씨 로드 실패:", err);
+              });
+            }
+
+            // 카드와 지도 업데이트
+            this.cards.render(displayData, this.map);
+            this.map.renderDayPlans(displayData.dayPlans);
+
+            console.log(`✅ Day${dayNum} 일정 표시 완료`);
+          }
+        }
+
+        // 최종 데이터 저장
+        const finalItinerary = {
+          city: city,
+          dayPlans: allDayPlans
+        };
+        sanitizePlan(finalItinerary, fx);
+
+        const formData = { city, startDate: start, endDate: end, people, budget: budgetNum };
+
+        // 날씨 정보 가져오기
+        const firstStop = finalItinerary.dayPlans?.[0]?.stops?.[0];
+        const weatherData = await this.fetchAndRenderWeather({
+          city: finalItinerary.city,
+          lat: firstStop?.lat || 34.6937,
+          lng: firstStop?.lng || 135.5023,
+          startDate: start,
+          averageWeather: null,
+        }).catch(() => null);
+
+        this.saveToSessionStorage(finalItinerary, formData, weatherData);
+
+        this.reviewBtn.hidden = false;
+        this.reviewBtn.addEventListener("click", () => {
+          sessionStorage.setItem("reviewCourse", JSON.stringify(finalItinerary));
+          window.location.href = "/review-form.html";
+        });
+
+        console.log("순차 로딩 완료");
+        return;
       }
 
-      const fx = 9.5;
-      sanitizePlan(itinerary, fx);
+      // 5일 이상: Day 1~4 순차 로딩 + 나머지 일괄 로딩
+      const allDayPlans = [];
 
-      const optimized = ItineraryPlanner.optimizeAll(itinerary.dayPlans || []);
-      const finalItin = { city: itinerary.city || city, dayPlans: optimized };
+      // Step 1: Day 1~4까지 순차적으로 로드
+      const sequentialDays = Math.min(4, totalDays);
+      for (let dayNum = 1; dayNum <= sequentialDays; dayNum++) {
+        updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
+
+        const dayResponse = await getAiDayNRecommendation(dayNum, params);
+
+        if (dayResponse && dayResponse.dayPlan) {
+          allDayPlans.push(dayResponse.dayPlan);
+
+          // 현재까지 로드된 일정 표시
+          const currentItinerary = {
+            city: dayResponse.city || city,
+            dayPlans: [...allDayPlans]
+          };
+
+          sanitizePlan(currentItinerary, fx);
+          const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
+          const displayData = { city: currentItinerary.city, dayPlans: optimized };
+
+          // 첫 Day 로드 시 지도 초기화
+          if (dayNum === 1) {
+            this.map.init([34.6937, 135.5023], 11);
+            this.rightPanel.style.display = null;
+            setTimeout(() => this.map.map.invalidateSize(), 0);
+
+            // 날씨 정보 로드 시작
+            const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
+            const weatherLat = firstStop?.lat || 34.6937;
+            const weatherLng = firstStop?.lng || 135.5023;
+
+            this.weather.showLoading();
+            this.fetchAndRenderWeather({
+              city: displayData.city,
+              lat: weatherLat,
+              lng: weatherLng,
+              startDate: start,
+              averageWeather: null,
+            }).catch(err => {
+              console.warn("날씨 로드 실패:", err);
+            });
+          }
+
+          // 카드와 지도 업데이트
+          this.cards.render(displayData, this.map);
+          this.map.renderDayPlans(displayData.dayPlans);
+
+          console.log(`Day${dayNum} 일정 표시 완료`);
+        }
+      }
+
+      // Step 2: Day 5+ 일괄 로딩 (나머지 일정만 가져오기)
+      if (totalDays > 4) {
+        updateLoadingMessage(this.loading, `나머지 ${totalDays - 4}일 생성 중...`);
+
+        const remainingResponse = await getAiRemainingRecommendation(params);
+
+        if (!remainingResponse || !Array.isArray(remainingResponse.dayPlans)) {
+          throw new Error("서버에서 유효하지 않은 응답을 받았습니다.");
+        }
+
+        // Day 5+ 일정을 기존 allDayPlans에 추가
+        allDayPlans.push(...remainingResponse.dayPlans);
+      }
+
+      // 전체 일정 생성
+      const finalItin = {
+        city: city,
+        dayPlans: allDayPlans
+      };
 
       sanitizePlan(finalItin, fx);
 
-      this.map.init([34.6937, 135.5023], 11);
-      this.cards.render(finalItin, this.map);
-      this.map.renderDayPlans(finalItin.dayPlans);
+      const optimized = ItineraryPlanner.optimizeAll(finalItin.dayPlans);
+      const displayData = { city: finalItin.city, dayPlans: optimized };
 
-      // 오른쪽 패널 표시 (맵 + 날씨 영역 표시)
-      this.rightPanel.style.display = null;
-      setTimeout(() => this.map.map.invalidateSize(), 0); // 지도 깨짐 방지
+      sanitizePlan(displayData, fx);
 
-      // 날씨 정보 로딩 시작 (백그라운드에서 로드)
-      this.weather.showLoading();
-
-      // AI 응답의 첫 번째 장소 좌표 추출
-      const firstStop = finalItin.dayPlans?.[0]?.stops?.[0];
-      const weatherLat = firstStop?.lat || 34.6937; // 기본값: 오사카
-      const weatherLng = firstStop?.lng || 135.5023;
+      // 전체 일정으로 화면 업데이트
+      this.cards.render(displayData, this.map);
+      this.map.renderDayPlans(displayData.dayPlans);
 
       // 폼 데이터 저장 (세션 저장용)
       const formData = {
-        city: finalItin.city,
+        city: displayData.city,
         startDate: start,
         endDate: end,
         people,
@@ -1026,23 +1335,26 @@ class AppController {
       };
 
       // 날씨 정보 가져오기 및 세션 저장
+      const firstStop = displayData.dayPlans?.[0]?.stops?.[0];
       const weatherData = await this.fetchAndRenderWeather({
-        city: finalItin.city, // AI가 추천한 최종 도시명
-        lat: weatherLat, // 첫 번째 장소의 위도
-        lng: weatherLng, // 첫 번째 장소의 경도
-        startDate: start, // 사용자가 입력한 여행 시작일
-        averageWeather: itinerary.averageWeather, // AI가 제공한 평균 날씨
-      });
+        city: displayData.city,
+        lat: firstStop?.lat || 34.6937,
+        lng: firstStop?.lng || 135.5023,
+        startDate: start,
+        averageWeather: null,
+      }).catch(() => null);
 
       // 추천 결과를 sessionStorage에 저장
-      this.saveToSessionStorage(finalItin, formData, weatherData);
+      this.saveToSessionStorage(displayData, formData, weatherData);
 
       // 리뷰 버튼 표시 및 이벤트 리스너 설정
       this.reviewBtn.hidden = false;
       this.reviewBtn.addEventListener("click", () => {
-        sessionStorage.setItem("reviewCourse", JSON.stringify(finalItin));
+        sessionStorage.setItem("reviewCourse", JSON.stringify(displayData));
         window.location.href = "/review-form.html";
       });
+
+      console.log("5일+ 순차+나머지 로딩 완료");
     } catch (err) {
       console.error("AI 추천 오류:", err);
 

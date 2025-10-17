@@ -205,7 +205,7 @@ class RecommendationRenderer {
           ${cbHTML}
         </div>
         <span class="cost">${
-          stopSum === 0 ? "무료" : formatCurrency(stopSum)
+          stopSum === 0 ? "무료" : `₩${stopSum.toLocaleString("ko-KR")}`
         }</span>
       </li>`;
   }
