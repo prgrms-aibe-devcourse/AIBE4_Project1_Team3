@@ -1,17 +1,81 @@
-// JSON 파싱 유틸리티
+// JSON 파싱 유틸리티 (강화된 버전)
 export const parseJSON = (text) => {
-  try {
-    return JSON.parse(text);
-  } catch {}
-
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return null;
-
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch {
+  if (!text || typeof text !== 'string') {
+    console.error('[parseJSON] 입력이 유효하지 않음:', typeof text);
     return null;
   }
+
+  // 5차 시도: 좌표 필드 수정 (잘못된 형식 자동 수정)
+  const fixCoordinates = (jsonText) => {
+    // 패턴: "lat":13.7563,100.5018,"lng": 형태를 "lat":13.7563,"lng":100.5018, 형태로 수정
+    let fixed = jsonText.replace(/"lat"\s*:\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*"lng"\s*:/g, '"lat":$1,"lng":$2,');
+
+    // 패턴2: "lng":값 뒤에 바로 다른 숫자가 오는 경우 제거
+    fixed = fixed.replace(/"lng"\s*:\s*(-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\s*,/g, '"lng":$1,');
+
+    return fixed;
+  };
+
+  // 1차 시도: 원본 텍스트 직접 파싱
+  try {
+    const parsed = JSON.parse(text);
+    console.log('[parseJSON] ✅ 1차 시도 성공 (직접 파싱)');
+    return parsed;
+  } catch (e1) {
+    console.warn('[parseJSON] 1차 시도 실패 (직접 파싱):', e1.message);
+  }
+
+  // 2차 시도: 마크다운 코드블록 제거 후 파싱
+  let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    console.log('[parseJSON] ✅ 2차 시도 성공 (코드블록 제거)');
+    return parsed;
+  } catch (e2) {
+    console.warn('[parseJSON] 2차 시도 실패 (코드블록 제거):', e2.message);
+  }
+
+  // 3차 시도: 좌표 필드 수정 후 파싱
+  const fixedCoords = fixCoordinates(cleaned);
+  try {
+    const parsed = JSON.parse(fixedCoords);
+    console.log('[parseJSON] ✅ 3차 시도 성공 (좌표 수정)');
+    return parsed;
+  } catch (e3) {
+    console.warn('[parseJSON] 3차 시도 실패 (좌표 수정):', e3.message);
+  }
+
+  // 4차 시도: 첫 번째 { 부터 마지막 } 까지 추출
+  const startIdx = fixedCoords.indexOf('{');
+  const endIdx = fixedCoords.lastIndexOf('}');
+  if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
+    const extracted = fixedCoords.substring(startIdx, endIdx + 1);
+    try {
+      const parsed = JSON.parse(extracted);
+      console.log('[parseJSON] ✅ 4차 시도 성공 (중괄호 추출)');
+      return parsed;
+    } catch (e4) {
+      console.warn('[parseJSON] 4차 시도 실패 (중괄호 추출):', e4.message);
+    }
+  }
+
+  // 5차 시도: 정규식으로 JSON 구조 매칭
+  const jsonMatch = fixedCoords.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      console.log('[parseJSON] ✅ 5차 시도 성공 (정규식 매칭)');
+      return parsed;
+    } catch (e5) {
+      console.warn('[parseJSON] 5차 시도 실패 (정규식 매칭):', e5.message);
+    }
+  }
+
+  // 모든 시도 실패
+  console.error('[parseJSON] ❌ 모든 파싱 시도 실패 (5번 시도)');
+  console.error('[parseJSON] 원본 텍스트 (앞 500자):', text.substring(0, 500));
+  console.error('[parseJSON] 수정된 텍스트 (앞 500자):', fixedCoords.substring(0, 500));
+  return null;
 };
 
 const COST_CONFIG = {

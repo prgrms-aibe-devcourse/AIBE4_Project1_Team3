@@ -26,27 +26,54 @@ document.addEventListener("DOMContentLoaded", async () => {
   endDateInput.setAttribute("min", startDateInput.value);
 });
 
+let messageInterval;
+
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
   const apiBaseUrl = "https://aibe4-project1-team3.onrender.com";
+  //const apiBaseUrl = "http://localhost:10000";
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
   const budget = form.elements.budget.value.replace(/,/g, "");
   const people = form.elements.people.value;
 
-  const resultsDiv = document.getElementById("results-container");
+  const resultsDiv = document.getElementById("resultsContainer");
 
-  let loadingP = document.getElementById("loading-message");
-  if (!loadingP) {
-    loadingP = document.createElement("p");
-    loadingP.id = "loading-message";
-    loadingP.className = "text-center";
-    resultsDiv.prepend(loadingP);
+  const loadingMessages = [
+    "전 세계 환율 데이터를 불러오는 중... 🌍",
+    "최근 환율 변동을 분석하고 있어요... 📊",
+    "예측 모델로 향후 환율을 계산하는 중... 📈",
+    "여행지별 평균 경비를 비교하고 있어요... 💰",
+    "가장 가성비 좋은 여행지를 추천 중입니다... 🏝️",
+  ];
+
+  let messageIndex = 0;
+
+  let loadingDiv = document.getElementById("loadingAnimation");
+  if (!loadingDiv) {
+    loadingDiv = document.createElement("div");
+    loadingDiv.id = "loadingAnimation";
+    loadingDiv.className =
+      "flex items-center justify-center gap-3 border border-gray-200 rounded-lg p-6 shadow-sm";
+    resultsDiv.prepend(loadingDiv);
   }
-  loadingP.innerHTML = "여행지를 추천하는 중입니다... 잠시만 기다려주세요.";
-  loadingP.classList.remove("hidden");
+  loadingDiv.innerHTML = `
+    <span id="loadingMessage" class="text-gray-700 font-medium"></span>
+  `;
+  loadingDiv.classList.remove("hidden");
+
+  const loadingMessageElement = document.getElementById("loadingMessage");
+  loadingMessageElement.textContent = loadingMessages[messageIndex];
+
+  // 이전에 실행되던 인터벌이 있다면 제거 (중복 실행 방지)
+  if (messageInterval) clearInterval(messageInterval);
+
+  messageInterval = setInterval(() => {
+    messageIndex = (messageIndex + 1) % loadingMessages.length;
+    loadingMessageElement.textContent = loadingMessages[messageIndex];
+  }, 1800); // 1.8초마다 메시지 변경
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/recommend`, {
@@ -91,10 +118,10 @@ function trendColor(rateChange) {
 }
 
 function displayResults(recommendations) {
-  const loadingP = document.getElementById("loading-message");
-  if (loadingP) loadingP.classList.add("hidden");
+  const loading = document.getElementById("loadingAnimation");
+  if (loading) loading.classList.add("hidden");
 
-  const recommendationGrid = document.getElementById("recommendation-grid");
+  const recommendationGrid = document.getElementById("recommendationGrid");
   recommendationGrid.classList.remove("hidden");
 
   const form = document.querySelector("form");
@@ -105,16 +132,16 @@ function displayResults(recommendations) {
 
   recommendations.forEach((rec, index) => {
     const rank = index + 1;
-    document.getElementById(`country-${rank}`).innerText = rec.country;
-    document.getElementById(`current-rate-${rank}`).innerText =
+    document.getElementById(`country${rank}`).innerText = rec.country;
+    document.getElementById(`currentRate${rank}`).innerText =
       rec.current_rate.toLocaleString("ko-KR");
-    document.getElementById(`forecasted_exchange_rate-${rank}`).innerText =
+    document.getElementById(`forecastedExchangeRate${rank}`).innerText =
       rec.forecasted_exchange_rate.toLocaleString("ko-KR");
-    document.getElementById(`reason-${rank}`).innerText = rec.reason;
-    document.getElementById(`per-cost-range-${rank}`).innerText =
+    document.getElementById(`reason${rank}`).innerText = rec.reason;
+    document.getElementById(`perCostRange${rank}`).innerText =
       rec.per_cost_range.toLocaleString("ko-KR") + "원";
 
-    const trendEl = document.getElementById(`trend-${rank}`);
+    const trendEl = document.getElementById(`trend${rank}`);
     const rateChange = rec.trend.replace("%", "");
     trendEl.innerText = `${rateChange > 0 ? "+" : ""}${rec.trend}`;
     let trendColorClass;
@@ -124,7 +151,7 @@ function displayResults(recommendations) {
   });
 
   // 추천 루트 보기 버튼에 클릭 이벤트 추가
-  const cards = document.querySelectorAll("#recommendation-grid > div");
+  const cards = document.querySelectorAll("#recommendationGrid > div");
   cards.forEach((card, index) => {
     const button = card.querySelector("button");
     if (button && recommendations[index]) {
@@ -243,7 +270,7 @@ async function renderGraph() {
   const { labels, data: currencyData } = apiData;
   // 3. Chart.js 렌더링
   console.log(apiData);
-  const containerGraph = document.querySelector("#chart-grid");
+  const containerGraph = document.querySelector("#chartGrid");
   Object.keys(currencyMap).forEach((code) => {
     const countryInfo = currencyMap[code];
     const rateData = currencyData[code];
@@ -264,7 +291,7 @@ async function renderGraph() {
     const trendColorClass = trendColor(rateChange);
 
     const item = document.createElement("div");
-    const canvasId = `chart-${code}`;
+    const canvasId = `chart${code}`;
     item.setAttribute(
       "class",
       "bg-white rounded-xl border border-gray-200 p-6 transition hover:shadow-lg"
