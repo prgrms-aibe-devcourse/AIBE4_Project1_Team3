@@ -26,6 +26,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   endDateInput.setAttribute("min", startDateInput.value);
 });
 
+let messageInterval;
+
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
 
@@ -38,15 +40,39 @@ window.handleFormSubmit = async function (event) {
 
   const resultsDiv = document.getElementById("resultsContainer");
 
-  let loadingP = document.getElementById("loadingMessage");
-  if (!loadingP) {
-    loadingP = document.createElement("p");
-    loadingP.id = "loadingMessage";
-    loadingP.className = "text-center";
-    resultsDiv.prepend(loadingP);
+  const loadingMessages = [
+    "전 세계 환율 데이터를 불러오는 중... 🌍",
+    "최근 환율 변동을 분석하고 있어요... 📊",
+    "예측 모델로 향후 환율을 계산하는 중... 📈",
+    "여행지별 평균 경비를 비교하고 있어요... 💰",
+    "가장 가성비 좋은 여행지를 추천 중입니다... 🏝️",
+  ];
+
+  let messageIndex = 0;
+
+  let loadingDiv = document.getElementById("loadingAnimation");
+  if (!loadingDiv) {
+    loadingDiv = document.createElement("div");
+    loadingDiv.id = "loadingAnimation";
+    loadingDiv.className =
+      "flex items-center justify-center gap-3 border border-gray-200 rounded-lg p-6 shadow-sm";
+    resultsDiv.prepend(loadingDiv);
   }
-  loadingP.innerHTML = "여행지를 추천하는 중입니다... 잠시만 기다려주세요.";
-  loadingP.classList.remove("hidden");
+  loadingDiv.innerHTML = `
+    <span id="loadingMessage" class="text-gray-700 font-medium"></span>
+  `;
+  loadingDiv.classList.remove("hidden");
+
+  const loadingMessageElement = document.getElementById("loadingMessage");
+  loadingMessageElement.textContent = loadingMessages[messageIndex];
+
+  // 이전에 실행되던 인터벌이 있다면 제거 (중복 실행 방지)
+  if (messageInterval) clearInterval(messageInterval);
+
+  messageInterval = setInterval(() => {
+    messageIndex = (messageIndex + 1) % loadingMessages.length;
+    loadingMessageElement.textContent = loadingMessages[messageIndex];
+  }, 1800); // 1.8초마다 메시지 변경
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/recommend`, {
@@ -91,8 +117,8 @@ function trendColor(rateChange) {
 }
 
 function displayResults(recommendations) {
-  const loadingP = document.getElementById("loadingMessage");
-  if (loadingP) loadingP.classList.add("hidden");
+  const loading = document.getElementById("loadingAnimation");
+  if (loading) loading.classList.add("hidden");
 
   const recommendationGrid = document.getElementById("recommendationGrid");
   recommendationGrid.classList.remove("hidden");
