@@ -1,3 +1,5 @@
+import apiBaseUrl from "../utils/utils.js";
+
 let exchangeRatesData;
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -30,9 +32,7 @@ let messageInterval;
 
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
-
-  const apiBaseUrl = "https://aibe4-project1-team3.onrender.com";
-  //const apiBaseUrl = "http://localhost:10000";
+  
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;

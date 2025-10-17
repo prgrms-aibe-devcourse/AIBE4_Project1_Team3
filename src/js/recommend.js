@@ -1,10 +1,18 @@
-import { getAiDayNRecommendation, getAiRemainingRecommendation } from "./api/ai.js";
-import { showLoading, hideLoading, updateLoadingMessage } from "./components/loading.js";
+import {
+  getAiDayNRecommendation,
+  getAiRemainingRecommendation,
+} from "./api/ai.js";
+import {
+  showLoading,
+  hideLoading,
+  updateLoadingMessage,
+} from "./components/loading.js";
 import {
   formatCurrency,
   stripDigits,
   getCurrencySymbol,
 } from "./utils/format.js";
+import apiBaseUrl from "../utils/utils.js";
 import { sanitizePlan } from "./utils/sanitizePlan.js";
 
 // XSS 방어를 위한 HTML 이스케이프 함수
@@ -168,7 +176,10 @@ class MapRenderer {
       (dp.stops || []).forEach((s, si) => {
         // 좌표값 유효성 검증
         if (!s || !isFinite(s.lat) || !isFinite(s.lng)) {
-          console.warn(`[지도 렌더링] Day ${dp.day} Stop ${si + 1}: 유효하지 않은 좌표`, s);
+          console.warn(
+            `[지도 렌더링] Day ${dp.day} Stop ${si + 1}: 유효하지 않은 좌표`,
+            s
+          );
           return;
         }
         const latlng = [s.lat, s.lng];
@@ -205,7 +216,10 @@ class MapRenderer {
     (dayPlan.stops || []).forEach((s, si) => {
       // 좌표값 유효성 검증
       if (!s || !isFinite(s.lat) || !isFinite(s.lng)) {
-        console.warn(`[지도 렌더링] Day ${dayPlan.day} Stop ${si + 1}: 유효하지 않은 좌표`, s);
+        console.warn(
+          `[지도 렌더링] Day ${dayPlan.day} Stop ${si + 1}: 유효하지 않은 좌표`,
+          s
+        );
         return;
       }
       const latlng = [s.lat, s.lng];
@@ -805,7 +819,10 @@ class AppController {
     this.rightPanel.style.display = "none";
 
     // 전체 일수 계산
-    const totalDays = Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1);
+    const totalDays = Math.max(
+      1,
+      Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1
+    );
 
     try {
       const fx = 9.5;
@@ -817,7 +834,10 @@ class AppController {
 
         // Day 1~4까지 순차적으로 로드
         for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
-          updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
+          updateLoadingMessage(
+            this.loading,
+            `${dayNum}/${totalDays}일 완성 중...`
+          );
 
           const dayResponse = await getAiDayNRecommendation(dayNum, params);
 
@@ -836,12 +856,17 @@ class AppController {
             // 현재까지 로드된 일정 표시
             const currentItinerary = {
               city: dayResponse.city || city,
-              dayPlans: [...allDayPlans]
+              dayPlans: [...allDayPlans],
             };
 
             sanitizePlan(currentItinerary, fx);
-            const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
-            const displayData = { city: currentItinerary.city, dayPlans: optimized };
+            const optimized = ItineraryPlanner.optimizeAll(
+              currentItinerary.dayPlans
+            );
+            const displayData = {
+              city: currentItinerary.city,
+              dayPlans: optimized,
+            };
 
             // 첫 Day 로드 시 지도 초기화
             if (dayNum === 1) {
@@ -877,11 +902,17 @@ class AppController {
         // 최종 데이터 저장
         const finalItinerary = {
           city: city,
-          dayPlans: allDayPlans
+          dayPlans: allDayPlans,
         };
         sanitizePlan(finalItinerary, fx);
 
-        const formData = { city, startDate, endDate, people, budget: budgetNum };
+        const formData = {
+          city,
+          startDate,
+          endDate,
+          people,
+          budget: budgetNum,
+        };
 
         // 날씨 정보 가져오기
         const firstStop = finalItinerary.dayPlans?.[0]?.stops?.[0];
@@ -897,7 +928,10 @@ class AppController {
 
         this.reviewBtn.hidden = false;
         this.reviewBtn.addEventListener("click", () => {
-          sessionStorage.setItem("reviewCourse", JSON.stringify(finalItinerary));
+          sessionStorage.setItem(
+            "reviewCourse",
+            JSON.stringify(finalItinerary)
+          );
           window.location.href = "/review-form.html";
         });
 
@@ -911,7 +945,10 @@ class AppController {
       // Step 1: Day 1~4까지 순차적으로 로드
       const sequentialDays = Math.min(4, totalDays);
       for (let dayNum = 1; dayNum <= sequentialDays; dayNum++) {
-        updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
+        updateLoadingMessage(
+          this.loading,
+          `${dayNum}/${totalDays}일 완성 중...`
+        );
 
         const dayResponse = await getAiDayNRecommendation(dayNum, params);
 
@@ -930,12 +967,17 @@ class AppController {
           // 현재까지 로드된 일정 표시
           const currentItinerary = {
             city: dayResponse.city || city,
-            dayPlans: [...allDayPlans]
+            dayPlans: [...allDayPlans],
           };
 
           sanitizePlan(currentItinerary, fx);
-          const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
-          const displayData = { city: currentItinerary.city, dayPlans: optimized };
+          const optimized = ItineraryPlanner.optimizeAll(
+            currentItinerary.dayPlans
+          );
+          const displayData = {
+            city: currentItinerary.city,
+            dayPlans: optimized,
+          };
 
           // 첫 Day 로드 시 지도 초기화
           if (dayNum === 1) {
@@ -970,7 +1012,10 @@ class AppController {
 
       // Step 2: Day 5+ 일괄 로딩 (나머지 일정만 가져오기)
       if (totalDays > 4) {
-        updateLoadingMessage(this.loading, `나머지 ${totalDays - 4}일 생성 중...`);
+        updateLoadingMessage(
+          this.loading,
+          `나머지 ${totalDays - 4}일 생성 중...`
+        );
 
         const remainingResponse = await getAiRemainingRecommendation(params);
 
@@ -984,7 +1029,7 @@ class AppController {
         // 전체 일정 생성
         const finalItin = {
           city: remainingResponse.city || city,
-          dayPlans: allDayPlans
+          dayPlans: allDayPlans,
         };
 
         sanitizePlan(finalItin, fx);
@@ -1073,15 +1118,6 @@ class AppController {
       const travelDate = new Date(startDate);
       travelDate.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil((travelDate - today) / (1000 * 60 * 60 * 24));
-
-      // API Base URL 환경별 자동 설정 (개발: localhost, 배포: Render)
-      const apiBaseUrl = (() => {
-        const hostname = window.location.hostname;
-        if (hostname === "localhost" || hostname === "127.0.0.1") {
-          return "http://localhost:10000";
-        }
-        return "https://aibe4-project1-team3.onrender.com";
-      })();
 
       console.log(`[날씨 로직] ${city}, 여행까지 ${diffDays}일`);
 
@@ -1189,11 +1225,20 @@ class AppController {
     this.rightPanel.style.display = "none";
 
     // 전체 일수 계산
-    const totalDays = Math.max(1, Math.round((new Date(end) - new Date(start)) / 86400000) + 1);
+    const totalDays = Math.max(
+      1,
+      Math.round((new Date(end) - new Date(start)) / 86400000) + 1
+    );
 
     try {
       const fx = 9.5;
-      const params = { city, startDate: start, endDate: end, people, budget: budgetNum };
+      const params = {
+        city,
+        startDate: start,
+        endDate: end,
+        people,
+        budget: budgetNum,
+      };
 
       // 4일 이하: 순차 로딩
       if (totalDays <= 4) {
@@ -1201,7 +1246,10 @@ class AppController {
 
         // Day 1~4까지 순차적으로 로드
         for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
-          updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
+          updateLoadingMessage(
+            this.loading,
+            `${dayNum}/${totalDays}일 완성 중...`
+          );
 
           const dayResponse = await getAiDayNRecommendation(dayNum, params);
 
@@ -1220,12 +1268,17 @@ class AppController {
             // 현재까지 로드된 일정 표시
             const currentItinerary = {
               city: dayResponse.city || city,
-              dayPlans: [...allDayPlans]
+              dayPlans: [...allDayPlans],
             };
 
             sanitizePlan(currentItinerary, fx);
-            const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
-            const displayData = { city: currentItinerary.city, dayPlans: optimized };
+            const optimized = ItineraryPlanner.optimizeAll(
+              currentItinerary.dayPlans
+            );
+            const displayData = {
+              city: currentItinerary.city,
+              dayPlans: optimized,
+            };
 
             // 첫 Day 로드 시 지도 초기화
             if (dayNum === 1) {
@@ -1261,11 +1314,17 @@ class AppController {
         // 최종 데이터 저장
         const finalItinerary = {
           city: city,
-          dayPlans: allDayPlans
+          dayPlans: allDayPlans,
         };
         sanitizePlan(finalItinerary, fx);
 
-        const formData = { city, startDate: start, endDate: end, people, budget: budgetNum };
+        const formData = {
+          city,
+          startDate: start,
+          endDate: end,
+          people,
+          budget: budgetNum,
+        };
 
         // 날씨 정보 가져오기
         const firstStop = finalItinerary.dayPlans?.[0]?.stops?.[0];
@@ -1281,7 +1340,10 @@ class AppController {
 
         this.reviewBtn.hidden = false;
         this.reviewBtn.addEventListener("click", () => {
-          sessionStorage.setItem("reviewCourse", JSON.stringify(finalItinerary));
+          sessionStorage.setItem(
+            "reviewCourse",
+            JSON.stringify(finalItinerary)
+          );
           window.location.href = "/review-form.html";
         });
 
@@ -1295,7 +1357,10 @@ class AppController {
       // Step 1: Day 1~4까지 순차적으로 로드
       const sequentialDays = Math.min(4, totalDays);
       for (let dayNum = 1; dayNum <= sequentialDays; dayNum++) {
-        updateLoadingMessage(this.loading, `${dayNum}/${totalDays}일 완성 중...`);
+        updateLoadingMessage(
+          this.loading,
+          `${dayNum}/${totalDays}일 완성 중...`
+        );
 
         const dayResponse = await getAiDayNRecommendation(dayNum, params);
 
@@ -1314,12 +1379,17 @@ class AppController {
           // 현재까지 로드된 일정 표시
           const currentItinerary = {
             city: dayResponse.city || city,
-            dayPlans: [...allDayPlans]
+            dayPlans: [...allDayPlans],
           };
 
           sanitizePlan(currentItinerary, fx);
-          const optimized = ItineraryPlanner.optimizeAll(currentItinerary.dayPlans);
-          const displayData = { city: currentItinerary.city, dayPlans: optimized };
+          const optimized = ItineraryPlanner.optimizeAll(
+            currentItinerary.dayPlans
+          );
+          const displayData = {
+            city: currentItinerary.city,
+            dayPlans: optimized,
+          };
 
           // 첫 Day 로드 시 지도 초기화
           if (dayNum === 1) {
@@ -1354,7 +1424,10 @@ class AppController {
 
       // Step 2: Day 5+ 일괄 로딩 (나머지 일정만 가져오기)
       if (totalDays > 4) {
-        updateLoadingMessage(this.loading, `나머지 ${totalDays - 4}일 생성 중...`);
+        updateLoadingMessage(
+          this.loading,
+          `나머지 ${totalDays - 4}일 생성 중...`
+        );
 
         const remainingResponse = await getAiRemainingRecommendation(params);
 
@@ -1369,7 +1442,7 @@ class AppController {
       // 전체 일정 생성
       const finalItin = {
         city: city,
-        dayPlans: allDayPlans
+        dayPlans: allDayPlans,
       };
 
       sanitizePlan(finalItin, fx);
