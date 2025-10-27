@@ -73,43 +73,17 @@ export async function recommend({
 
   const contextDataString = JSON.stringify(contextDataForPrompt, null, 2);
 
-  const anlysisProimprt = `
+  const RecommendPrompt = `
     # 역할
-      당신은 글로벌 거시 경제 및 외환 시장 분석 전문가입니다. 당신의 임무는 주어진 데이터를 바탕으로 각 국가의 미래 환율 동향을 예측하고, 그 경제적 배경을 명확하게 설명하는 것입니다.
-
-      # 임무
-      아래에 제공된 국가별 데이터와 당신의 전문 지식 및 실시간 검색 능력을 활용하여, 각 국가의 원화(KRW) 대비 환율이 여행 시작 시점(${startDate})에 어떻게 변동할지 예측하고, 그 핵심 근거를 분석해 주세요.
-
-      # 분석 대상 국가 데이터
-      ${contextDataString}
-
-      # 분석 규칙
-      1.  **거시 경제 분석**: 각 국가의 중앙은행(예: 일본은행, 미국 연준) 통화정책, 인플레이션 전망, 주요 경제 지표 등을 종합적으로 고려하여 환율 변동의 핵심 원인을 분석합니다.
-      2.  **전망 요약**: 분석 결과를 바탕으로, 각 국가별로 아래 형식에 맞춰 환율 전망과 그 근거를 간결한 문장으로 요약해 주세요.
-
-      # 출력 형식 (반드시 아래와 같은 Markdown 형식으로만 답변)
-      - **[국가명 1]**: [미래 시점의 예상 환율(current_rate 형식과 동일하게)] | [경제 상황에 기반한 구체적인 환율 예측 근거]
-      - **[국가명 2]**: [미래 시점의 예상 환율(current_rate 형식과 동일하게)] | [경제 상황에 기반한 구체적인 환율 예측 근거]
-      - **[국가명 3]**: [미래 시점의 예상 환율(current_rate 형식과 동일하게)] | [경제 상황에 기반한 구체적인 환율 예측 근거]
-      ... (모든 후보 국가에 대해 반복) ...  
-  `;
-
-  // 1단계 실행: 환율 분석 결과 생성
-  const analysisResult = await model.generateContent(anlysisProimprt);
-  const analysisResponse = await analysisResult.response;
-  const exchangeRateAnalysis = await analysisResponse.text();
-
-  // --- 2단계: 최종 추천 JSON 생성 프롬프트 ---
-  const recommendationPrompt = `
-    # 역할
-    당신은 데이터 기반의 여행지 추천 전문가입니다. 당신의 임무는 주어진 사용자 정보와 전문가의 환율 분석 데이터를 종합하여, 최종 여행지를 JSON 형식으로 추천하는 것입니다.
+    당신은 데이터와 거시 경제 분석을 기반으로 여행지를 추천하는 '데이터 기반 여행 추천 전문가'입니다.
+    당신의 임무는 (1) 전문가 수준의 환율 분석을 먼저 수행하고, (2) 이 분석 결과와 사용자 데이터를 종합하여 (3) 최종 여행 추천 JSON을 생성하는 것입니다.
 
     # 임무
-    아래에 제공된 '사용자 정보', '국가별 기본 데이터', 그리고 '외환 전문가의 환율 전망 분석' 내용을 종합하여, 사용자에게 가장 합리적인 여행지 3곳을 최종 추천해 주세요.
+    아래에 제공된 '사용자 정보'와 '국가별 기본 데이터'를 바탕으로, 지금부터 여행 시작일(${startDate})까지의 환율 변동을 예측하고, 이를 기반으로 사용자에게 가장 합리적인 여행지 3곳을 최종 추천하는 JSON을 생성해 주세요.
 
     # 사용자 정보
     - 조회 시점 (오늘 날짜): ${today}
-    - 여행 기간: ${startDate} 부터 ${endDate} 까지
+    - 여행 기간: ${startDate} 부터 ${endDate} 까지 (총 ${durationDays}일)
     - 총 예산: ${budget}원(KRW)
     - 1인당 예산: ${(budget / people).toLocaleString()}원 (KRW)
     - 인원: ${people}명
@@ -117,40 +91,43 @@ export async function recommend({
     # 국가별 기본 데이터
     ${contextDataString}
 
-    # 외환 전문가의 환율 전망 분석
-    ${exchangeRateAnalysis}
+    # 과업 수행 절차 (Internal Process)
+    최종 JSON을 출력하기 전에, 당신은 내부적으로 다음 2가지 핵심 분석을 반드시 수행해야 합니다.
 
-    # 추가 과업: 여행 경비 추정
-    1.  **1인당 평균 왕복 항공권 비용**: ${startDate} ~ ${endDate} 기간의 일반적인 비용을 추정하세요.
-    2.  **1박당 평균 숙소 비용**: 3성급 호텔 또는 에어비앤비 수준으로 추정하세요.
-    3.  **1인당 일일 예상 경비**: 기본 100,000원을 기준으로 각 국가의 물가를 고려하여 조정하세요.
+    ## 1단계: 환율 전망 분석 (내부적 사고)
+    - **분석 규칙**: 각 국가의 중앙은행(예: 일본은행, 미국 연준) 통화정책, 인플레이션 전망, 주요 경제 지표 등을 종합적으로 고려하여 ${startDate} 시점의 환율 변동 핵심 원인을 분석합니다.
+    - **결과 도출**: 이 분석을 통해 각 국가별로 '예상 환율(forecasted_exchange_rate)' 값과 '환율 예측 근거(economic_reasoning)' 문장을 내부적으로 도출합니다.
 
-    # 최종 추천 논리
-    1.  **예상 경비 계산**: '# 추가 과업'을 바탕으로 1인당 총 예상 경비의 범위('per_cost_range')를 계산합니다. (계산식: (항공권) + (숙소비 * (${durationDays}-1)) + (일일 경비 * ${durationDays}), 약 15% 변동폭 적용)
-        - 출력은 120,000 ~ 140,000과 같이 작성합니다.
-    
-    2.  **추천 이유(reason) 생성 (가장 중요한 단계):**
-        - **1단계 (경제적 배경 인용):** '# [중요] 외환 전문가의 환율 전망 분석' 섹션에 있는 국가별 '예측 근거'를 문장의 핵심 시작점으로 삼아야 합니다. 이 부분이 '왜' 환율이 유리한지에 대한 거시 경제적 설명입니다.
-        - **2단계 (예산 적합성 연결):** 1단계에서 계산한 'per_cost_range'가 사용자의 예산에 얼마나 적합한지를 자연스럽게 연결하여 설명합니다.
-        - **3단계 (최종 문장 생성):** 위 두 요소를 결합하여, 전문가의 분석이 담긴 설득력 있는 문장을 완성합니다.
+    ## 2단계: 여행 경비 추정 및 추천 논리 생성 (내부적 사고)
+    - **경비 추정**:
+        1.  **1인당 평균 왕복 항공권 비용**: ${startDate} ~ ${endDate} 기간의 일반적인 비용을 추정합니다.
+        2.  **1박당 평균 숙소 비용**: 3성급 호텔 또는 에어비앤비 수준으로 추정합니다.
+        3.  **1인당 일일 예상 경비**: 기본 100,000원을 기준으로 각 국가의 물가를 고려하여 조정합니다.
+    - **예상 경비 계산**:
+        - 위 추정치를 바탕으로 1인당 총 예상 경비의 범위('per_cost_range')를 계산합니다.
+        - (계산식: (항공권) + (숙소비 * (${durationDays}-1)) + (일일 경비 * ${durationDays}), 약 15% 변동폭 적용)
+        - (출력 형식 예: "1,200,000 ~ 1,400,000")
+    - **추천 이유(reason) 생성 (가장 중요한 단계):**
+        - **(A) 경제적 배경 인용:** [1단계: 환율 전망 분석]에서 당신이 내부적으로 도출한 국가별 '환율 예측 근거(economic_reasoning)'를 문장의 핵심 시작점으로 사용합니다.
+        - **(B) 예산 적합성 연결:** (A)의 내용에 이어, [2단계: 예상 경비 계산]에서 도출한 'per_cost_range'가 사용자의 예산에 얼마나 적합한지를 자연스럽게 연결하여 설명합니다.
+        - **(C) 최종 문장 생성:** 위 두 요소를 결합하여, 전문가의 분석이 담긴 설득력 있는 문장을 완성합니다.
+            - (좋은 예시): "일본은행의 지속적인 금융완화 정책으로 엔화 약세가 전망되어 환율이 매우 유리하며, 예상 경비 또한 예산 범위 내에 있어 경제적인 선택입니다."
+            - (나쁜 예시): "전반적으로 물가가 저렴하고 예상 경비가 예산보다 낮아 추천합니다." (-> 1단계 전문가 분석이 반영되지 않음)
 
-        - **(✅ 좋은 예시):** "일본은행의 지속적인 금융완화 정책으로 엔화 약세가 전망되어 환율이 매우 유리하며, 예상 경비 또한 예산 범위 내에 있어 경제적인 선택입니다."
-        - **(❌ 나쁜 예시):** "전반적으로 물가가 저렴하고 예상 경비가 예산보다 낮아 추천합니다." (-> 전문가 분석이 전혀 반영되지 않음)
+    - **순위 결정**: 환율의 유리함(1단계 분석 결과)과 예산 효율성(2단계 분석 결과)을 종합적으로 고려하여 가장 가치 있는 여행지 순서대로 1, 2, 3위를 선정합니다.
 
-    3.  **순위 결정**: 환율의 유리함(전망)과 예산 효율성을 종합적으로 고려하여 가장 가치 있는 여행지 순서대로 1, 2, 3위를 선정합니다.
-
-    # 출력 형식 (다른 설명 없이 반드시 아래 JSON 형식으로만 답변)
+    # 최종 출력 형식 (다른 설명 없이 반드시 아래 JSON 형식으로만 답변)
     {
       "recommendations": [
-        {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터의 current_exchange_rate", "reason": "생성된 추천 이유", "forecasted_exchange_rate": "분석된 예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "입력 데이터의 exchange_rate_trend_6m_avg"},
-        {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터의 current_exchange_rate", "reason": "생성된 추천 이유", "forecasted_exchange_rate": "분석된 예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "입력 데이터의 exchange_rate_trend_6m_avg"},
-        {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터의 current_exchange_rate", "reason": "생성된 추천 이유", "forecasted_exchange_rate": "분석된 예상 환율", "per_cost_range": "계산된 1인당 총 예상 경비", "trend": "입력 데이터의 exchange_rate_trend_6m_avg"}
+        {"rank": 1, "country": "추천 국가명", "current_rate": "입력 데이터의 current_exchange_rate", "reason": "[2단계 (C)]에서 생성된 추천 이유", "forecasted_exchange_rate": "[1단계]에서 분석된 예상 환율 (current_rate 형식과 동일하게)", "per_cost_range": "[2단계]에서 계산된 1인당 총 예상 경비", "trend": "입력 데이터의 exchange_rate_trend_6m_avg"},
+        {"rank": 2, "country": "추천 국가명", "current_rate": "입력 데이터의 current_exchange_rate", "reason": "[2단계 (C)]에서 생성된 추천 이유", "forecasted_exchange_rate": "[1단계]에서 분석된 예상 환율 (current_rate 형식과 동일하게)", "per_cost_range": "[2단계]에서 계산된 1인당 총 예상 경비", "trend": "입력 데이터의 exchange_rate_trend_6m_avg"},
+        {"rank": 3, "country": "추천 국가명", "current_rate": "입력 데이터의 current_exchange_rate", "reason": "[2단계 (C)]에서 생성된 추천 이유", "forecasted_exchange_rate": "[1단계]에서 분석된 예상 환율 (current_rate 형식과 동일하게)", "per_cost_range": "[2단계]에서 계산된 1인당 총 예상 경비", "trend": "입력 데이터의 exchange_rate_trend_6m_avg"}
       ]
     }
   `;
 
   // 2단계 실행: 최종 JSON 결과 생성
-  const result = await model.generateContent(recommendationPrompt);
+  const result = await model.generateContent(RecommendPrompt);
   const response = await result.response;
   const text = await response.text();
 
