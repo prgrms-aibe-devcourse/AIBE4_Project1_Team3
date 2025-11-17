@@ -32,7 +32,7 @@ let messageInterval;
 
 window.handleFormSubmit = async function (event) {
   event.preventDefault();
-  
+
   const form = event.target;
   const startDate = form.elements.start_date.value;
   const endDate = form.elements.end_date.value;
@@ -224,7 +224,7 @@ const currencyMap = {
 
 async function renderGraph() {
   const exchangeRatesData = {};
-  const API_URL = "https://aibe4-project1-team3.onrender.com/api/exchange";
+  const API_URL = `${apiBaseUrl}/api/exchange`;
   let apiData;
 
   const cachedData = sessionStorage.getItem("exchangeData");
